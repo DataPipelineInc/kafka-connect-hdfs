@@ -114,6 +114,8 @@ public class TopicPartitionWriter {
   private final ExecutorService executorService;
   private final Queue<Future<Void>> hiveUpdateFutures;
   private final Set<String> hivePartitions;
+  private Set<TopicPartition> partitionsToPause;
+  private Set<TopicPartition> partitionsToResume;
 
   public TopicPartitionWriter(
       TopicPartition tp,
@@ -143,6 +145,45 @@ public class TopicPartitionWriter {
         null,
         time
     );
+  }
+
+  public TopicPartitionWriter(
+      TopicPartition tp,
+      HdfsStorage storage,
+      RecordWriterProvider writerProvider,
+      io.confluent.connect.storage.format.RecordWriterProvider<HdfsSinkConnectorConfig>
+          newWriterProvider,
+      Partitioner partitioner,
+      HdfsSinkConnectorConfig connectorConfig,
+      SinkTaskContext context,
+      AvroData avroData,
+      HiveMetaStore hiveMetaStore,
+      HiveUtil hive,
+      io.confluent.connect.storage.format.SchemaFileReader<HdfsSinkConnectorConfig, Path>
+          schemaFileReader,
+      ExecutorService executorService,
+      Queue<Future<Void>> hiveUpdateFutures,
+      Time time,
+      Set<TopicPartition> partitionsToPause,
+      Set<TopicPartition> partitionsToResume
+  ) {
+    this(
+        tp,
+        storage,
+        writerProvider,
+        newWriterProvider,
+        partitioner,
+        connectorConfig,
+        context,
+        avroData,
+        hiveMetaStore,
+        hive,
+        schemaFileReader,
+        executorService,
+        hiveUpdateFutures,
+        time);
+    this.partitionsToPause = partitionsToPause;
+    this.partitionsToResume = partitionsToResume;
   }
 
   public TopicPartitionWriter(
@@ -536,12 +577,30 @@ public class TopicPartitionWriter {
     }
   }
 
+  private boolean isAsync() {
+    if (partitionsToPause != null && partitionsToResume != null) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   private void pause() {
-    context.pause(tp);
+    if (isAsync()) {
+      partitionsToPause.add(tp);
+      partitionsToResume.remove(tp);
+    } else {
+      context.pause(tp);
+    }
   }
 
   private void resume() {
-    context.resume(tp);
+    if (isAsync()) {
+      partitionsToResume.add(tp);
+      partitionsToPause.remove(tp);
+    } else {
+      context.pause(tp);
+    }
   }
 
   private io.confluent.connect.storage.format.RecordWriter getWriter(

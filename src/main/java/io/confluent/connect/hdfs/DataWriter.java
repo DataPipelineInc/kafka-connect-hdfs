@@ -92,6 +92,8 @@ public class DataWriter {
   private boolean hiveIntegration;
   private Thread ticketRenewThread;
   private volatile boolean isRunning;
+  private Set<TopicPartition> partitionsToPause;
+  private Set<TopicPartition> partitionsToResume;
 
   public DataWriter(
       HdfsSinkConnectorConfig connectorConfig,
@@ -100,6 +102,17 @@ public class DataWriter {
   ) {
     this(connectorConfig, context, avroData, SYSTEM_TIME);
 
+  }
+
+  public DataWriter(
+      HdfsSinkConnectorConfig connectorConfig,
+      SinkTaskContext context,
+      AvroData avroData,
+      Set<TopicPartition> partitionsToPause,
+      Set<TopicPartition> partitionsToResume) {
+    this(connectorConfig, context, avroData, SYSTEM_TIME);
+    this.partitionsToPause = partitionsToPause;
+    this.partitionsToResume = partitionsToResume;
   }
 
   public DataWriter(
