@@ -587,18 +587,22 @@ public class TopicPartitionWriter {
 
   private void pause() {
     if (isAsync()) {
+      log.debug("async pause. topic:{} partition:{}",tp.topic(),tp.partition());
       partitionsToPause.add(tp);
       partitionsToResume.remove(tp);
     } else {
+      log.debug("sync pause. topic:{} partition:{}",tp.topic(),tp.partition());
       context.pause(tp);
     }
   }
 
   private void resume() {
     if (isAsync()) {
+      log.debug("async resume. topic:{} partition:{}",tp.topic(),tp.partition());
       partitionsToResume.add(tp);
       partitionsToPause.remove(tp);
     } else {
+      log.debug("sync resume:. topic:{} partition:{}",tp.topic(),tp.partition());
       context.resume(tp);
     }
   }
