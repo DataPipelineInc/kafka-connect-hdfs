@@ -344,6 +344,10 @@ public class DataWriter {
   }
 
   public void write(Collection<SinkRecord> records) {
+    write(records, false);
+  }
+
+  public synchronized void write(Collection<SinkRecord> records, Boolean isFlushing) {
     for (SinkRecord record : records) {
       String topic = record.topic();
       int partition = record.kafkaPartition();
@@ -371,7 +375,7 @@ public class DataWriter {
     }
 
     for (TopicPartition tp : assignment) {
-      topicPartitionWriters.get(tp).write();
+      topicPartitionWriters.get(tp).write(isFlushing);
     }
   }
 
