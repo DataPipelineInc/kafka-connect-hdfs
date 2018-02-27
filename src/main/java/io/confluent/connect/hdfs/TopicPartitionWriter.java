@@ -599,7 +599,7 @@ public class TopicPartitionWriter {
       partitionsToResume.add(tp);
       partitionsToPause.remove(tp);
     } else {
-      context.pause(tp);
+      context.resume(tp);
     }
   }
 
