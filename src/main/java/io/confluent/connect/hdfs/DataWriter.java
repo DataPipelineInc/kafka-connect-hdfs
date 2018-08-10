@@ -388,9 +388,12 @@ public class DataWriter {
     for (TopicPartition tp : assignment) {
       topics.add(tp.topic());
     }
+    syncWithHive(topics);
+  }
 
+  public void syncWithHive(Set<String> names) throws ConnectException {
     try {
-      for (String topic : topics) {
+      for (String topic : names) {
         String topicDir = FileUtils.topicDirectory(url, topicsDir, topic);
         CommittedFileFilter filter = new TopicCommittedFileFilter(topic);
         FileStatus fileStatusWithMaxOffset = FileUtils.fileStatusWithMaxOffset(
