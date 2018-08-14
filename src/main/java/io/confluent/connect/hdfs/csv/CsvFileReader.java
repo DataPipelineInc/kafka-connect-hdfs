@@ -1,7 +1,6 @@
 package io.confluent.connect.hdfs.csv;
 
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
-import io.confluent.connect.hdfs.csv.converter.CsvSchemaConverter;
 import io.confluent.connect.hdfs.hive.HiveMetaStore;
 import io.confluent.connect.storage.hive.HiveConfig;
 import java.util.Iterator;

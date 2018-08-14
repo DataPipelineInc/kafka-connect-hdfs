@@ -1,4 +1,4 @@
-package io.confluent.connect.hdfs.csv.converter;
+package io.confluent.connect.hdfs.csv;
 
 import java.util.HashMap;
 import java.util.Map;
