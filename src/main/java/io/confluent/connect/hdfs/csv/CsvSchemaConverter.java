@@ -9,7 +9,7 @@ import org.apache.kafka.connect.data.Schema;
 
 public class CsvSchemaConverter {
 
-  private static final Map<TypeInfo, Schema> TYPE_INFO_TO_TYPE = new HashMap();
+  private static final Map<TypeInfo, Schema> TYPE_INFO_TO_TYPE = new HashMap<>();
 
   static {
     TYPE_INFO_TO_TYPE.put(TypeInfoFactory.booleanTypeInfo, Schema.BOOLEAN_SCHEMA);
