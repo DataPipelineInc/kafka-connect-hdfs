@@ -23,10 +23,11 @@ public class CsvRecordWriterProvider
 
   public static final String FILE_DELIMITER = "file.delim";
   public static final String FILE_ESCAPE = "file.escape";
+  private static final String EXTENSION = ".csv";
 
   @Override
   public String getExtension() {
-    return null;
+    return EXTENSION;
   }
 
   @Override
