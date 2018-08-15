@@ -45,7 +45,8 @@ public class CsvRecordWriterProvider
           FileSystem fs = FileSystem.get(conf.getHadoopConfiguration());
           FSDataOutputStream fsDataOutputStream = fs.create(path);
           String delimiter = Optional.of(conf.getString(FILE_DELIMITER)).orElse(",");
-          String escape = Optional.of(conf.getString(FILE_ESCAPE)).orElse("\"");
+          String escape = "\"";
+          //          String escape = Optional.of(conf.getString(FILE_ESCAPE)).orElse("\"");
           JSONObject content = parseSinkRecordStruct(((Struct) record.value()).getStruct("after"));
           String csvStr = format(content, delimiter, escape);
           fsDataOutputStream.write(csvStr.getBytes());
