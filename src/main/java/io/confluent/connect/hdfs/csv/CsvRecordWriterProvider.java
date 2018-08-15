@@ -50,6 +50,8 @@ public class CsvRecordWriterProvider
           JSONObject content = parseSinkRecordStruct(((Struct) record.value()).getStruct("after"));
           String csvStr = format(content, delimiter, escape);
           fsDataOutputStream.write(csvStr.getBytes());
+          fsDataOutputStream.flush();
+          fsDataOutputStream.close();
         } catch (IOException | JSONException e) {
           throw new ConnectException(e);
         }
