@@ -187,7 +187,7 @@
             <Xlint:-deprecation/>
             <!-- Needed for DataWriter.java because @SuppressWarnings("unchecked") doesn't cover this on JDK 7 -->
             <Xlint:-unchecked/>
-            <Werror/>
+            <!--<Werror/>-->
           </compilerArguments>
           <showWarnings>true</showWarnings>
           <showDeprecation>false</showDeprecation>

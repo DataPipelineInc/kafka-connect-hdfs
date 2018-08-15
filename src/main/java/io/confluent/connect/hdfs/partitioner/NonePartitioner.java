@@ -1,5 +1,6 @@
 package io.confluent.connect.hdfs.partitioner;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -11,16 +12,16 @@ public class NonePartitioner implements Partitioner {
 
   @Override
   public String encodePartition(SinkRecord sinkRecord) {
-    return null;
+    return "";
   }
 
   @Override
   public String generatePartitionedPath(String topic, String encodedPartition) {
-    return null;
+    return "";
   }
 
   @Override
   public List<FieldSchema> partitionFields() {
-    return null;
+    return new ArrayList<>();
   }
 }
