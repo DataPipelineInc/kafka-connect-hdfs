@@ -4,6 +4,7 @@ import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.storage.format.RecordWriter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,11 +13,14 @@ import java.util.Optional;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.kafka.connect.data.Decimal;
+import org.apache.kafka.connect.data.Field;
+import org.apache.kafka.connect.data.Schema.Type;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class CsvRecordWriterProvider
     implements io.confluent.connect.storage.format.RecordWriterProvider<HdfsSinkConnectorConfig> {
@@ -40,10 +44,9 @@ public class CsvRecordWriterProvider
         try {
           FileSystem fs = FileSystem.get(conf.getHadoopConfiguration());
           FSDataOutputStream fsDataOutputStream = fs.create(path);
-          String value = ((Struct) record.value()).getString("after");
           String delimiter = Optional.of(conf.getString(FILE_DELIMITER)).orElse(",");
           String escape = Optional.of(conf.getString(FILE_ESCAPE)).orElse("\"");
-          JSONObject content = new JSONObject(value);
+          JSONObject content = parseSinkRecordStruct(((Struct) record.value()).getStruct("after"));
           String csvStr = format(content, delimiter, escape);
           fsDataOutputStream.write(csvStr.getBytes());
         } catch (IOException | JSONException e) {
@@ -143,5 +146,40 @@ public class CsvRecordWriterProvider
       @Override
       public void commit() {}
     };
+  }
+
+  private static JSONObject parseSinkRecordStruct(Struct struct) throws JSONException {
+    JSONObject store = new JSONObject();
+    if ((struct == null) || (struct.schema() == null)) {
+      return store;
+    }
+    for (Field field : struct.schema().fields()) {
+      Object value = struct.get(field);
+      Object jsonValue;
+      String name = field.schema().name();
+      if (value == "\\N" || value == null) {
+        jsonValue = JSONObject.NULL;
+      } else if (field.schema().type() == Type.BYTES) {
+        if (Decimal.LOGICAL_NAME.equals(name)) {
+          jsonValue = value;
+        } else {
+          if (value instanceof ByteBuffer) {
+            jsonValue = ((ByteBuffer) value).array();
+          } else {
+            jsonValue = value;
+          }
+        }
+      } else if (value instanceof Struct) {
+        jsonValue = parseSinkRecordStruct((Struct) value);
+      } else {
+        jsonValue = value;
+      }
+      store.put(
+          field.schema().parameters() == null
+              ? field.name()
+              : field.schema().parameters().getOrDefault("name", field.name()),
+          jsonValue);
+    }
+    return store;
   }
 }
