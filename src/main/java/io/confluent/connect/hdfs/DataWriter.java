@@ -375,7 +375,7 @@ public class DataWriter {
   }
 
   private String getTableName(String topic) {
-    return topic.substring(topic.lastIndexOf("\\."));
+    return topic.substring(topic.lastIndexOf('.') + 1);
   }
 
   public void write(Collection<SinkRecord> records) {
