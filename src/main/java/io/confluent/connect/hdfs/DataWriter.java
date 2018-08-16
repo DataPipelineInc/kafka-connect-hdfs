@@ -354,18 +354,16 @@ public class DataWriter {
     String schemaPartitions = config.getString(HdfsSinkConnectorConfig.SCHEMA_PARTITIONS);
     ObjectMapper mapper = new ObjectMapper();
     try {
-      Map<String, String> map = mapper.treeToValue(mapper.readTree(schemaPartitions), Map.class);
+      Map<String, Map<String,String>> map = mapper.treeToValue(mapper.readTree(schemaPartitions), Map.class);
       map.forEach(
           (key, value) -> {
             ConfigDef partitionerConfigDef =
                 PartitionerConfig.newConfigDef(new GenericRecommender());
             try {
               PartitionerConfig partitionerConfig =
-                  new PartitionerConfig(
-                      partitionerConfigDef, mapper.treeToValue(mapper.readTree(value), Map.class));
+                  new PartitionerConfig(partitionerConfigDef, value);
               partitioners.put(key, newPartitioner(partitionerConfig));
-            } catch (IOException
-                | IllegalAccessException
+            } catch (IllegalAccessException
                 | InstantiationException
                 | ClassNotFoundException e) {
               throw new ConnectException(e);
