@@ -14,6 +14,9 @@
 
 package io.confluent.connect.hdfs;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.confluent.connect.storage.common.GenericRecommender;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -21,9 +24,11 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.slf4j.Logger;
@@ -79,7 +84,8 @@ public class DataWriter {
       schemaFileReader;
   private io.confluent.connect.storage.format.Format<HdfsSinkConnectorConfig, Path> newFormat;
   private Set<TopicPartition> assignment;
-  private Partitioner partitioner;
+//  private Partitioner partitioner;
+  private Map<String,Partitioner> partitioners;
   private Map<TopicPartition, Long> offsets;
   private HdfsSinkConnectorConfig connectorConfig;
   private AvroData avroData;
@@ -117,6 +123,7 @@ public class DataWriter {
       this.avroData = avroData;
       this.context = context;
 
+      initPartitioners(connectorConfig);
       String hadoopConfDir = connectorConfig.getString(
           HdfsSinkConnectorConfig.HADOOP_CONF_DIR_CONFIG
       );
@@ -275,7 +282,7 @@ public class DataWriter {
         };
       }
 
-      partitioner = newPartitioner(connectorConfig);
+//      partitioner = newPartitioner(connectorConfig);
 
       assignment = new HashSet<>(context.assignment());
       offsets = new HashMap<>();
@@ -312,27 +319,27 @@ public class DataWriter {
 
       topicPartitionWriters = new HashMap<>();
       for (TopicPartition tp : assignment) {
-        TopicPartitionWriter topicPartitionWriter = new TopicPartitionWriter(
-            tp,
-            storage,
-            writerProvider,
-            newWriterProvider,
-            partitioner,
-            connectorConfig,
-            context,
-            avroData,
-            hiveMetaStore,
-            hive,
-            schemaFileReader,
-            executorService,
-            hiveUpdateFutures,
-            time
-        );
+        Partitioner partitioner = partitioners.get(getTableName(tp.topic()));
+        TopicPartitionWriter topicPartitionWriter =
+            new TopicPartitionWriter(
+                tp,
+                storage,
+                writerProvider,
+                newWriterProvider,
+                partitioner,
+                connectorConfig,
+                context,
+                avroData,
+                hiveMetaStore,
+                hive,
+                schemaFileReader,
+                executorService,
+                hiveUpdateFutures,
+                time);
         topicPartitionWriters.put(tp, topicPartitionWriter);
       }
     } catch (
-        ClassNotFoundException
-            | IllegalAccessException
+         IllegalAccessException
             | InstantiationException
             | InvocationTargetException
             | NoSuchMethodException e
@@ -341,6 +348,36 @@ public class DataWriter {
     } catch (IOException e) {
       throw new ConnectException(e);
     }
+  }
+
+  private void initPartitioners(HdfsSinkConnectorConfig config) {
+    String schemaPartitions = config.getString(HdfsSinkConnectorConfig.SCHEMA_PARTITIONS);
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      Map<String, String> map = mapper.treeToValue(mapper.readTree(schemaPartitions), Map.class);
+      map.forEach(
+          (key, value) -> {
+            ConfigDef partitionerConfigDef =
+                PartitionerConfig.newConfigDef(new GenericRecommender());
+            try {
+              PartitionerConfig partitionerConfig =
+                  new PartitionerConfig(
+                      partitionerConfigDef, mapper.treeToValue(mapper.readTree(value), Map.class));
+              partitioners.put(key, newPartitioner(partitionerConfig));
+            } catch (IOException
+                | IllegalAccessException
+                | InstantiationException
+                | ClassNotFoundException e) {
+              throw new ConnectException(e);
+            }
+          });
+    } catch (IOException e) {
+      throw new ConnectException(e);
+    }
+  }
+
+  private String getTableName(String topic) {
+    return topic.substring(topic.lastIndexOf("\\."));
   }
 
   public void write(Collection<SinkRecord> records) {
@@ -386,7 +423,7 @@ public class DataWriter {
   public void syncWithHive() throws ConnectException {
     Set<String> topics = new HashSet<>();
     for (TopicPartition tp : assignment) {
-      topics.add(tp.topic());
+      topics.add(getTableName(tp.topic()));
     }
     syncWithHive(topics);
   }
@@ -408,7 +445,7 @@ public class DataWriter {
               connectorConfig,
               path
           );
-          hive.createTable(hiveDatabase, topic, latestSchema, partitioner);
+          hive.createTable(hiveDatabase, topic, latestSchema, partitioners.get(topic));
           List<String> partitions = hiveMetaStore.listPartitions(hiveDatabase, topic, (short) -1);
           FileStatus[] statuses = FileUtils.getDirectories(storage, new Path(topicDir));
           for (FileStatus status : statuses) {
@@ -433,7 +470,7 @@ public class DataWriter {
           storage,
           writerProvider,
           newWriterProvider,
-          partitioner,
+          partitioners.get(getTableName(tp.topic())),
           connectorConfig,
           context,
           avroData,
@@ -505,8 +542,8 @@ public class DataWriter {
     }
   }
 
-  public Partitioner getPartitioner() {
-    return partitioner;
+  public Partitioner getPartitioner(String name) {
+    return partitioners.get(name);
   }
 
   public Map<TopicPartition, Long> getCommittedOffsets() {
@@ -540,7 +577,7 @@ public class DataWriter {
     }
   }
 
-  private Partitioner newPartitioner(HdfsSinkConnectorConfig config)
+  private Partitioner newPartitioner(PartitionerConfig config)
       throws ClassNotFoundException, IllegalAccessException, InstantiationException {
 
     Partitioner partitioner;
@@ -559,7 +596,7 @@ public class DataWriter {
       partitioner = new PartitionerWrapper(partitionerClass.newInstance());
     }
 
-    partitioner.configure(new HashMap<>(config.plainValues()));
+    partitioner.configure(config.originals());
     return partitioner;
   }
 

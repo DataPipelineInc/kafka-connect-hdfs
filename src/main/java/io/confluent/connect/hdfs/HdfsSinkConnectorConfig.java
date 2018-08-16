@@ -112,6 +112,8 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
   private static final String KERBEROS_TICKET_RENEW_PERIOD_MS_DISPLAY = "Kerberos Ticket Renew "
       + "Period (ms)";
 
+  public static final String SCHEMA_PARTITIONS = "schema.partitions";
+
   private static final ConfigDef.Recommender hdfsAuthenticationKerberosDependentsRecommender =
       new BooleanParentRecommender(
           HDFS_AUTHENTICATION_KERBEROS_CONFIG);
