@@ -351,10 +351,12 @@ public class DataWriter {
   }
 
   private void initPartitioners(HdfsSinkConnectorConfig config) {
-    String schemaPartitions = config.getString(HdfsSinkConnectorConfig.SCHEMA_PARTITIONS);
+    String schemaPartitions =
+        config.originalsStrings().get(HdfsSinkConnectorConfig.SCHEMA_PARTITIONS);
     ObjectMapper mapper = new ObjectMapper();
     try {
-      Map<String, Map<String,String>> map = mapper.treeToValue(mapper.readTree(schemaPartitions), Map.class);
+      Map<String, Map<String, String>> map =
+          mapper.treeToValue(mapper.readTree(schemaPartitions), Map.class);
       map.forEach(
           (key, value) -> {
             ConfigDef partitionerConfigDef =
@@ -363,9 +365,7 @@ public class DataWriter {
               PartitionerConfig partitionerConfig =
                   new PartitionerConfig(partitionerConfigDef, value);
               partitioners.put(key, newPartitioner(partitionerConfig));
-            } catch (IllegalAccessException
-                | InstantiationException
-                | ClassNotFoundException e) {
+            } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
               throw new ConnectException(e);
             }
           });
