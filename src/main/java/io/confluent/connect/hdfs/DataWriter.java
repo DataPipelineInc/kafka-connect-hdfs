@@ -85,7 +85,7 @@ public class DataWriter {
   private io.confluent.connect.storage.format.Format<HdfsSinkConnectorConfig, Path> newFormat;
   private Set<TopicPartition> assignment;
 //  private Partitioner partitioner;
-  private Map<String,Partitioner> partitioners;
+  private Map<String,Partitioner> partitioners = new HashMap<>();
   private Map<TopicPartition, Long> offsets;
   private HdfsSinkConnectorConfig connectorConfig;
   private AvroData avroData;
