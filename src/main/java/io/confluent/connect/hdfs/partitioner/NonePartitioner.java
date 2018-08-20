@@ -7,8 +7,14 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 public class NonePartitioner implements Partitioner {
+  protected Map<String, Object> config;
+  private String delim;
+
   @Override
-  public void configure(Map<String, Object> config) {}
+  public void configure(Map<String, Object> config) {
+    this.config = config;
+    this.delim = (String) config.get("directory.delim");
+  }
 
   @Override
   public String encodePartition(SinkRecord sinkRecord) {
@@ -17,7 +23,7 @@ public class NonePartitioner implements Partitioner {
 
   @Override
   public String generatePartitionedPath(String topic, String encodedPartition) {
-    return "";
+    return topic + this.delim + encodedPartition;
   }
 
   @Override
