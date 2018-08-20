@@ -13,7 +13,7 @@ public class NonePartitioner implements Partitioner {
   @Override
   public void configure(Map<String, Object> config) {
     this.config = config;
-    this.delim = (String) config.get("directory.delim");
+    this.delim = "/";
   }
 
   @Override
