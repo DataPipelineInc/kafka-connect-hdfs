@@ -338,13 +338,6 @@ public class TopicPartitionWriter {
             // pause();
             nextState();
           case WRITE_PARTITION_PAUSED:
-            if (isFlushing) {
-              if (shouldRotateAndMaybeUpdateTimers(currentRecord, now)) {
-                nextState();
-                continue;
-              }
-              break;
-            }
             if (currentSchema == null) {
               if (compatibility != StorageSchemaCompatibility.NONE && offset != -1) {
                 String topicDir = FileUtils.topicDirectory(url, topicsDir, tp.topic());
@@ -366,6 +359,24 @@ public class TopicPartitionWriter {
             log.debug("current sink record to be writen into temp file is {}", record);
             currentRecord = record;
             Schema valueSchema = record.valueSchema();
+//            if (isFlushing) {
+//              if (shouldRotateAndMaybeUpdateTimers(currentRecord, now)) {
+//                log.info(
+//                    "Starting commit and rotation for topic partition {} with start offsets {} "
+//                        + "and end offsets {}",
+//                    tp,
+//                    startOffsets,
+//                    offsets
+//                );
+//                nextState();
+//              }else{
+//                SinkRecord projectedRecord = compatibility.project(record, null, currentSchema);
+//                writeRecord(projectedRecord);
+//                buffer.poll();
+//                log.debug("current sink record writen into temp file is {}", record);
+//                break;
+//              }
+//            }
             if ((recordCounter <= 0 && currentSchema == null && valueSchema != null)
                 || compatibility.shouldChangeSchema(record, null, currentSchema)) {
               currentSchema = valueSchema;
