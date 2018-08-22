@@ -339,7 +339,7 @@ public class TopicPartitionWriter {
             nextState();
           case WRITE_PARTITION_PAUSED:
             if (isFlushing) {
-              if (shouldRotateAndMaybeUpdateTimers(currentRecord, now)) {
+              if (currentRecord != null && shouldRotateAndMaybeUpdateTimers(currentRecord, now)) {
                 nextState();
                 continue;
               }
