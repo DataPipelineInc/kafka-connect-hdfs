@@ -339,7 +339,7 @@ public class TopicPartitionWriter {
             nextState();
           case WRITE_PARTITION_PAUSED:
             if (isFlushing) {
-              if (currentRecord != null && shouldRotateAndMaybeUpdateTimers(currentRecord, now)) {
+              if (shouldRotateAndMaybeUpdateTimers(currentRecord, now)) {
                 nextState();
                 continue;
               }
@@ -399,7 +399,7 @@ public class TopicPartitionWriter {
             }
           case SHOULD_ROTATE:
             updateRotationTimers(currentRecord);
-            // closeTempFile();
+//            closeTempFile();
             log.debug("temp file closed");
             nextState();
           case TEMP_FILE_CLOSED:
@@ -437,7 +437,7 @@ public class TopicPartitionWriter {
         updateRotationTimers(currentRecord);
 
         try {
-          closeTempFile();
+//          closeTempFile();
           appendToWAL();
           commitFile();
         } catch (ConnectException e) {
