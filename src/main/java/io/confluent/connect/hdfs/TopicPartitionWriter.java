@@ -332,6 +332,7 @@ public class TopicPartitionWriter {
     }
     while (!buffer.isEmpty() || isFlushing) {
       try {
+        now = time.milliseconds();
         switch (state) {
           case WRITE_STARTED:
             // pause();
