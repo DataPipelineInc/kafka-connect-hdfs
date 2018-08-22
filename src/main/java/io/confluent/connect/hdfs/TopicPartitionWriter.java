@@ -399,7 +399,7 @@ public class TopicPartitionWriter {
             }
           case SHOULD_ROTATE:
             updateRotationTimers(currentRecord);
-            closeTempFile();
+            // closeTempFile();
             log.debug("temp file closed");
             nextState();
           case TEMP_FILE_CLOSED:
