@@ -341,6 +341,7 @@ public class TopicPartitionWriter {
             if (isFlushing) {
               if (shouldRotateAndMaybeUpdateTimers(currentRecord, now)) {
                 nextState();
+                isFlushing = false;
                 continue;
               }
               break;
