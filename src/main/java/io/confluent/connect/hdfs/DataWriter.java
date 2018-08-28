@@ -300,12 +300,12 @@ public class DataWriter {
                 String database, String tableName, Schema schema,
                 Partitioner partitioner
             ) {
-              newHiveUtil.createTable(database, tableName, schema, partitioner);
+              newHiveUtil.createTable(database, FileUtils.getTableFromTopic(tableName), schema, partitioner);
             }
 
             @Override
             public void alterSchema(String database, String tableName, Schema schema) {
-              newHiveUtil.alterSchema(database, tableName, schema);
+              newHiveUtil.alterSchema(database, FileUtils.getTableFromTopic(tableName), schema);
             }
           };
         } else {
@@ -441,7 +441,7 @@ public class DataWriter {
               connectorConfig,
               path
           );
-          hive.createTable(hiveDatabase, topic, latestSchema, partitioners.get(topic));
+          hive.createTable(hiveDatabase, FileUtils.getTableFromTopic(topic), latestSchema, partitioners.get(topic));
           List<String> partitions = hiveMetaStore.listPartitions(hiveDatabase, topic, (short) -1);
           FileStatus[] statuses = FileUtils.getDirectories(storage, new Path(topicDir));
           for (FileStatus status : statuses) {

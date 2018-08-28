@@ -14,6 +14,7 @@
 
 package io.confluent.connect.hdfs;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -72,6 +73,10 @@ public class FileUtils {
     UUID id = UUID.randomUUID();
     String name = id.toString() + "_" + "tmp" + extension;
     return fileName(url, topicsDir, directory, name);
+  }
+
+  public static String getTableFromTopic(String topic) {
+    return StringUtils.substringAfterLast(topic, ".");
   }
 
   public static String committedFileName(

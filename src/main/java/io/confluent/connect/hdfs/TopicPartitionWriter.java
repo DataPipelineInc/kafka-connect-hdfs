@@ -772,7 +772,7 @@ public class TopicPartitionWriter {
       @Override
       public Void call() throws HiveMetaStoreException {
         try {
-          hive.createTable(hiveDatabase, tp.topic(), currentSchema, partitioner);
+          hive.createTable(hiveDatabase, FileUtils.getTableFromTopic(tp.topic()), currentSchema, partitioner);
         } catch (Throwable e) {
           log.error("Creating Hive table threw unexpected error", e);
         }
@@ -787,7 +787,7 @@ public class TopicPartitionWriter {
       @Override
       public Void call() throws HiveMetaStoreException {
         try {
-          hive.alterSchema(hiveDatabase, tp.topic(), currentSchema);
+          hive.alterSchema(hiveDatabase, FileUtils.getTableFromTopic(tp.topic()), currentSchema);
         } catch (Throwable e) {
           log.error("Altering Hive schema threw unexpected error", e);
         }
@@ -802,7 +802,7 @@ public class TopicPartitionWriter {
       @Override
       public Void call() throws Exception {
         try {
-          hiveMetaStore.addPartition(hiveDatabase, tp.topic(), location);
+          hiveMetaStore.addPartition(hiveDatabase, FileUtils.getTableFromTopic(tp.topic()), location);
         } catch (Throwable e) {
           log.error("Adding Hive partition threw unexpected error", e);
         }
