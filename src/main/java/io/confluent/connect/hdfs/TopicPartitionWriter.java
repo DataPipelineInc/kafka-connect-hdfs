@@ -348,7 +348,7 @@ public class TopicPartitionWriter {
             }
             if (currentSchema == null) {
               if (compatibility != StorageSchemaCompatibility.NONE && offset != -1) {
-                String topicDir = FileUtils.topicDirectory(url, topicsDir, tp.topic());
+                String topicDir = FileUtils.topicDirectory(url, topicsDir, FileUtils.getTableFromTopic(tp));
                 CommittedFileFilter filter = new TopicPartitionCommittedFileFilter(tp);
                 FileStatus fileStatusWithMaxOffset = FileUtils.fileStatusWithMaxOffset(
                     storage,
@@ -514,7 +514,7 @@ public class TopicPartitionWriter {
   }
 
   private String getDirectory(String encodedPartition) {
-    return partitioner.generatePartitionedPath(tp.topic(), encodedPartition);
+    return partitioner.generatePartitionedPath(FileUtils.getTableFromTopic(tp), encodedPartition);
   }
 
   private void nextState() {
@@ -545,7 +545,7 @@ public class TopicPartitionWriter {
   }
 
   private void readOffset() throws ConnectException {
-    String path = FileUtils.topicDirectory(url, topicsDir, tp.topic());
+    String path = FileUtils.topicDirectory(url, topicsDir, FileUtils.getTableFromTopic(tp));
     CommittedFileFilter filter = new TopicPartitionCommittedFileFilter(tp);
     FileStatus fileStatusWithMaxOffset = FileUtils.fileStatusWithMaxOffset(
         storage,
@@ -787,7 +787,7 @@ public class TopicPartitionWriter {
       @Override
       public Void call() throws HiveMetaStoreException {
         try {
-          hive.alterSchema(hiveDatabase, FileUtils.getTableFromTopic(tp.topic()), currentSchema);
+          hive.alterSchema(hiveDatabase, FileUtils.getTableFromTopic(tp), currentSchema);
         } catch (Throwable e) {
           log.error("Altering Hive schema threw unexpected error", e);
         }
@@ -802,7 +802,7 @@ public class TopicPartitionWriter {
       @Override
       public Void call() throws Exception {
         try {
-          hiveMetaStore.addPartition(hiveDatabase, FileUtils.getTableFromTopic(tp.topic()), location);
+          hiveMetaStore.addPartition(hiveDatabase, FileUtils.getTableFromTopic(tp), location);
         } catch (Throwable e) {
           log.error("Adding Hive partition threw unexpected error", e);
         }
