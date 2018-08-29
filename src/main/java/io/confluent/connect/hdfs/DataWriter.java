@@ -300,12 +300,12 @@ public class DataWriter {
                 String database, String tableName, Schema schema,
                 Partitioner partitioner
             ) {
-              newHiveUtil.createTable(database, FileUtils.getTableFromTopic(tableName), schema, partitioner);
+              newHiveUtil.createTable(database, tableName, schema, partitioner);
             }
 
             @Override
             public void alterSchema(String database, String tableName, Schema schema) {
-              newHiveUtil.alterSchema(database, FileUtils.getTableFromTopic(tableName), schema);
+              newHiveUtil.alterSchema(database, tableName, schema);
             }
           };
         } else {
