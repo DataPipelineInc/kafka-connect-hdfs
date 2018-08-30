@@ -14,6 +14,7 @@
 
 package io.confluent.connect.hdfs;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -39,9 +40,9 @@ public class FileUtils {
   }
 
   public static String directoryName(String url, String topicsDir, TopicPartition topicPart) {
-    String topic = topicPart.topic();
+    String tableName = getTableFromTopic(topicPart);
     int partition = topicPart.partition();
-    return url + "/" + topicsDir + "/" + topic + "/" + partition;
+    return url + "/" + topicsDir + "/" + tableName + "/" + partition;
   }
 
   public static String directoryName(String url, String topicsDir, String directory) {
@@ -54,9 +55,9 @@ public class FileUtils {
       TopicPartition topicPart,
       String name
   ) {
-    String topic = topicPart.topic();
+    String tableName = getTableFromTopic(topicPart);
     int partition = topicPart.partition();
-    return url + "/" + topicsDir + "/" + topic + "/" + partition + "/" + name;
+    return url + "/" + topicsDir + "/" + tableName + "/" + partition + "/" + name;
   }
 
   public static String fileName(String url, String topicsDir, String directory, String name) {
@@ -74,6 +75,14 @@ public class FileUtils {
     return fileName(url, topicsDir, directory, name);
   }
 
+  public static String getTableFromTopic(TopicPartition topic) {
+    return getTableFromTopic(topic.topic());
+  }
+
+  public static String getTableFromTopic(String topic) {
+    return StringUtils.substringAfterLast(topic, ".");
+  }
+
   public static String committedFileName(
       String url,
       String topicsDir,
@@ -84,10 +93,10 @@ public class FileUtils {
       String extension,
       String zeroPadFormat
   ) {
-    String topic = topicPart.topic();
+    String tableName = getTableFromTopic(topicPart);
     int partition = topicPart.partition();
     StringBuilder sb = new StringBuilder();
-    sb.append(topic);
+    sb.append(tableName);
     sb.append(HdfsSinkConnectorConstants.COMMMITTED_FILENAME_SEPARATOR);
     sb.append(partition);
     sb.append(HdfsSinkConnectorConstants.COMMMITTED_FILENAME_SEPARATOR);

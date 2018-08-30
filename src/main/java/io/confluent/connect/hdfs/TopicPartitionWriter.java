@@ -351,30 +351,45 @@ public class TopicPartitionWriter {
     }
   }
 
+
   @SuppressWarnings("fallthrough")
   public void write() {
+    write(false);
+  }
+
+  @SuppressWarnings("fallthrough")
+  public void write(Boolean isFlushing) {
     long now = time.milliseconds();
     SinkRecord currentRecord = null;
     if (failureTime > 0 && now - failureTime < timeoutMs) {
       return;
     }
     if (state.compareTo(State.WRITE_STARTED) < 0) {
-      boolean success = recover();
+      /*boolean success = recover();
       if (!success) {
         return;
-      }
+      }*/
       updateRotationTimers(null);
     }
-    while (!buffer.isEmpty()) {
+    while (!buffer.isEmpty() || isFlushing) {
       try {
+        now = time.milliseconds();
         switch (state) {
           case WRITE_STARTED:
-            pause();
+            // pause();
             nextState();
           case WRITE_PARTITION_PAUSED:
+            if (isFlushing) {
+              if (shouldRotateAndMaybeUpdateTimers(currentRecord, now)) {
+                nextState();
+                isFlushing = false;
+                continue;
+              }
+              break;
+            }
             if (currentSchema == null) {
               if (compatibility != StorageSchemaCompatibility.NONE && offset != -1) {
-                String topicDir = FileUtils.topicDirectory(url, topicsDir, tp.topic());
+                String topicDir = FileUtils.topicDirectory(url, topicsDir, FileUtils.getTableFromTopic(tp));
                 CommittedFileFilter filter = new TopicPartitionCommittedFileFilter(tp);
                 FileStatus fileStatusWithMaxOffset = FileUtils.fileStatusWithMaxOffset(
                     storage,
@@ -390,6 +405,7 @@ public class TopicPartitionWriter {
               }
             }
             SinkRecord record = buffer.peek();
+            log.debug("current sink record to be writen into temp file is {}", record);
             currentRecord = record;
             Schema valueSchema = record.valueSchema();
             if ((recordCounter <= 0 && currentSchema == null && valueSchema != null)
@@ -419,21 +435,26 @@ public class TopicPartitionWriter {
                 SinkRecord projectedRecord = compatibility.project(record, null, currentSchema);
                 writeRecord(projectedRecord);
                 buffer.poll();
+                log.debug("current sink record writen into temp file is {}", record);
                 break;
               }
             }
           case SHOULD_ROTATE:
             updateRotationTimers(currentRecord);
             closeTempFile();
+            log.debug("temp file closed");
             nextState();
           case TEMP_FILE_CLOSED:
             appendToWAL();
+            log.debug("appended to wal");
             nextState();
           case WAL_APPENDED:
             commitFile();
+            log.debug("file committed");
             nextState();
           case FILE_COMMITTED:
             setState(State.WRITE_PARTITION_PAUSED);
+            log.debug("status reset to {}", State.WRITE_PARTITION_PAUSED);
             break;
           default:
             log.error("{} is not a valid state to write record for topic partition {}.", state, tp);
@@ -468,7 +489,7 @@ public class TopicPartitionWriter {
         }
       }
 
-      resume();
+      //resume();
       state = State.WRITE_STARTED;
     }
   }
@@ -534,7 +555,7 @@ public class TopicPartitionWriter {
   }
 
   private String getDirectory(String encodedPartition) {
-    return partitioner.generatePartitionedPath(tp.topic(), encodedPartition);
+    return partitioner.generatePartitionedPath(FileUtils.getTableFromTopic(tp), encodedPartition);
   }
 
   private void nextState() {
@@ -565,7 +586,7 @@ public class TopicPartitionWriter {
   }
 
   private void readOffset() throws ConnectException {
-    String path = FileUtils.topicDirectory(url, topicsDir, tp.topic());
+    String path = FileUtils.topicDirectory(url, topicsDir, FileUtils.getTableFromTopic(tp));
     CommittedFileFilter filter = new TopicPartitionCommittedFileFilter(tp);
     FileStatus fileStatusWithMaxOffset = FileUtils.fileStatusWithMaxOffset(
         storage,
@@ -814,7 +835,7 @@ public class TopicPartitionWriter {
       @Override
       public Void call() throws HiveMetaStoreException {
         try {
-          hive.createTable(hiveDatabase, tp.topic(), currentSchema, partitioner);
+          hive.createTable(hiveDatabase, FileUtils.getTableFromTopic(tp.topic()), currentSchema, partitioner);
         } catch (Throwable e) {
           log.error("Creating Hive table threw unexpected error", e);
         }
@@ -829,7 +850,7 @@ public class TopicPartitionWriter {
       @Override
       public Void call() throws HiveMetaStoreException {
         try {
-          hive.alterSchema(hiveDatabase, tp.topic(), currentSchema);
+          hive.alterSchema(hiveDatabase, FileUtils.getTableFromTopic(tp), currentSchema);
         } catch (Throwable e) {
           log.error("Altering Hive schema threw unexpected error", e);
         }
@@ -844,7 +865,7 @@ public class TopicPartitionWriter {
       @Override
       public Void call() throws Exception {
         try {
-          hiveMetaStore.addPartition(hiveDatabase, tp.topic(), location);
+          hiveMetaStore.addPartition(hiveDatabase, FileUtils.getTableFromTopic(tp), location);
         } catch (Throwable e) {
           log.error("Adding Hive partition threw unexpected error", e);
         }

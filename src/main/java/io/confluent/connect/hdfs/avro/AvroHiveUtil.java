@@ -89,9 +89,12 @@ public class AvroHiveUtil extends HiveUtil {
     } catch (HiveException e) {
       throw new HiveMetaStoreException("Cannot find input/output format:", e);
     }
-    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(schema);
+    Schema dpSchema = schema.field("after").schema();
+    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(dpSchema);
     table.setFields(columns);
-    table.setPartCols(partitioner.partitionFields());
+    if (partitioner != null) {
+      table.setPartCols(partitioner.partitionFields());
+    }
     table.getParameters().put(AVRO_SCHEMA_LITERAL, avroData.fromConnectSchema(schema).toString());
     return table;
   }

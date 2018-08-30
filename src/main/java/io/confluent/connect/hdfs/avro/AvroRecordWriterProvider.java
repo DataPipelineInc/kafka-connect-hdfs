@@ -19,6 +19,7 @@ import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -59,12 +60,13 @@ public class AvroRecordWriterProvider
       @Override
       public void write(SinkRecord record) {
         if (schema == null) {
-          schema = record.valueSchema();
+          schema = record.valueSchema().field("after").schema();
           try {
             log.info("Opening record writer for: {}", filename);
             final FSDataOutputStream out = path.getFileSystem(conf.getHadoopConfiguration())
                 .create(path);
-            org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(schema);
+            org.apache.avro.Schema avroSchema =
+                      avroData.fromConnectSchema(schema).getTypes().get(1);
             writer.create(avroSchema, out);
           } catch (IOException e) {
             throw new ConnectException(e);
@@ -72,7 +74,7 @@ public class AvroRecordWriterProvider
         }
 
         log.trace("Sink record: {}", record.toString());
-        Object value = avroData.fromConnectData(schema, record.value());
+        Object value = avroData.fromConnectData(schema, ((Struct) record.value()).get("after"));
         try {
           // AvroData wraps primitive types so their schema can be included. We need to unwrap
           // NonRecordContainers to just their value to properly handle these types
