@@ -330,12 +330,15 @@ public class TopicPartitionWriter {
       }*/
       updateRotationTimers(null);
     }
-    while (!buffer.isEmpty() || isFlushing) {
+    while (!buffer.isEmpty()) {
       try {
         now = time.milliseconds();
         switch (state) {
           case WRITE_STARTED:
             // pause();
+            if (buffer.isEmpty()) {
+              break;
+            }
             nextState();
           case WRITE_PARTITION_PAUSED:
             if (isFlushing) {
