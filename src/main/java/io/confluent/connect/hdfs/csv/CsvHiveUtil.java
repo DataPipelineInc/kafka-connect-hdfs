@@ -57,7 +57,10 @@ public class CsvHiveUtil extends HiveUtil {
     } catch (HiveException e) {
       throw new HiveMetaStoreException("Cannot find input/output format:", e);
     }
-    Schema dpSchema = schema.field("after").schema();
+    Schema dpSchema = schema;
+    if (schema.field("after") != null) {
+      dpSchema = schema.field("after").schema();
+    }
     List<FieldSchema> columns = HiveSchemaConverter.convertSchema(dpSchema);
     table.setFields(columns);
     if (partitioner != null) {
