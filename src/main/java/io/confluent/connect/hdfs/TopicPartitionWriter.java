@@ -330,7 +330,7 @@ public class TopicPartitionWriter {
       }*/
       updateRotationTimers(null);
     }
-    while (!buffer.isEmpty()) {
+    while (!buffer.isEmpty() || isFlushing) {
       try {
         now = time.milliseconds();
         switch (state) {
