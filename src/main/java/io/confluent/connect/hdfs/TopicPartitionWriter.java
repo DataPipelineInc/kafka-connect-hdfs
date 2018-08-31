@@ -336,9 +336,6 @@ public class TopicPartitionWriter {
         switch (state) {
           case WRITE_STARTED:
             // pause();
-            if (buffer.isEmpty()) {
-              break;
-            }
             nextState();
           case WRITE_PARTITION_PAUSED:
             if (isFlushing) {
@@ -428,6 +425,10 @@ public class TopicPartitionWriter {
         failureTime = time.milliseconds();
         setRetryTimeout(timeoutMs);
         break;
+      }finally{
+        if (buffer.isEmpty()) {
+          isFlushing = false;
+        }
       }
     }
     if (buffer.isEmpty()) {
