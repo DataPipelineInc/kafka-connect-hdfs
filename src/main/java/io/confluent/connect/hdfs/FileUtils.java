@@ -80,7 +80,11 @@ public class FileUtils {
   }
 
   public static String getTableFromTopic(String topic) {
-    return StringUtils.substringAfterLast(topic, ".");
+    String tableName = StringUtils.substringAfterLast(topic, ".");
+    if (StringUtils.isEmpty(tableName)) {
+      return topic;
+    }
+    return tableName;
   }
 
   public static String committedFileName(
