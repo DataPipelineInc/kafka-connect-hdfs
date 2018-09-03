@@ -417,6 +417,7 @@ public class TopicPartitionWriter {
             break;
           default:
             log.error("{} is not a valid state to write record for topic partition {}.", state, tp);
+            throw new ConnectException(String.format("%s is not a valid state to write record for topic partition %s.",state,tp));
         }
       } catch (SchemaProjectorException | IllegalWorkerStateException | HiveMetaStoreException e) {
         throw new RuntimeException(e);
