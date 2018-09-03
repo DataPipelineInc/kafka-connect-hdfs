@@ -55,7 +55,7 @@ public class FileUtils {
       TopicPartition topicPart,
       String name
   ) {
-    String tableName = getTableFromTopic(topicPart);
+    String tableName = topicPart.topic();
     int partition = topicPart.partition();
     return url + "/" + topicsDir + "/" + tableName + "/" + partition + "/" + name;
   }
