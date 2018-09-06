@@ -14,6 +14,7 @@
 
 package io.confluent.connect.hdfs.filter;
 
+import io.confluent.connect.hdfs.FileUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
 
@@ -41,6 +42,6 @@ public class TopicPartitionCommittedFileFilter extends CommittedFileFilter {
     }
     String topic = m.group(HdfsSinkConnectorConstants.PATTERN_TOPIC_GROUP);
     int partition = Integer.parseInt(m.group(HdfsSinkConnectorConstants.PATTERN_PARTITION_GROUP));
-    return topic.equals(tp.topic()) && partition == tp.partition();
+    return topic.equals(FileUtils.getTableFromTopic(tp)) && partition == tp.partition();
   }
 }

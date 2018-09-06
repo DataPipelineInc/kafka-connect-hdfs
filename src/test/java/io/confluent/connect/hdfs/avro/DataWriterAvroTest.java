@@ -57,7 +57,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   @Test
   public void testWriteRecord() throws Exception {
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
     List<SinkRecord> sinkRecords = createSinkRecords(7);
@@ -77,7 +77,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
     HdfsStorage storage = new HdfsStorage(connectorConfig, url);
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+    partitioner = hdfsWriter.getPartitioner(TOPIC_PARTITION.topic());
 
     WAL wal = storage.wal(logsDir, TOPIC_PARTITION);
 
@@ -113,7 +113,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   @Test
   public void testWriteRecordMultiplePartitions() throws Exception {
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
 
     for (TopicPartition tp : context.assignment()) {
       hdfsWriter.recover(tp);
@@ -133,7 +133,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   @Test
   public void testWriteInterleavedRecordsInMultiplePartitions() throws Exception {
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
 
     for (TopicPartition tp : context.assignment()) {
       hdfsWriter.recover(tp);
@@ -153,7 +153,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   @Test
   public void testWriteInterleavedRecordsInMultiplePartitionsNonZeroInitialOffset() throws Exception {
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
 
     List<SinkRecord> sinkRecords = createSinkRecordsInterleaved(7 * context.assignment().size(), 9,
         context.assignment());
@@ -199,7 +199,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   @Test
   public void testWriteRecordNonZeroInitialOffset() throws Exception {
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
     List<SinkRecord> sinkRecords = createSinkRecords(7, 3);
@@ -216,7 +216,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
   @Test
   public void testRebalance() throws Exception {
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
 
     Set<TopicPartition> originalAssignment = new HashSet<>(context.assignment());
     // Starts with TOPIC_PARTITION and TOPIC_PARTITION2
@@ -267,7 +267,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
 
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
     List<SinkRecord> sinkRecords = createSinkRecordsWithAlternatingSchemas(7, 0);
@@ -286,7 +286,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
 
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
     List<SinkRecord> sinkRecords = createSinkRecordsWithAlternatingSchemas(7, 0);
@@ -307,7 +307,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
 
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
     // By excluding the first element we get a list starting with record having the new schema.
@@ -328,7 +328,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
     HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
 
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
     hdfsWriter.recover(TOPIC_PARTITION);
 
     List<SinkRecord> sinkRecords = createSinkRecordsNoVersion(1, 0);
@@ -377,7 +377,7 @@ public class DataWriterAvroTest extends TestWithMiniDFSCluster {
 
     Time time = TopicPartitionWriterTest.MockedWallclockTimestampExtractor.TIME;
     DataWriter hdfsWriter = new DataWriter(connectorConfig, context, avroData, time);
-    partitioner = hdfsWriter.getPartitioner();
+//    partitioner = hdfsWriter.getPartitioner();
 
     hdfsWriter.recover(TOPIC_PARTITION);
 

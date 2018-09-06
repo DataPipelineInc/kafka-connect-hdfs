@@ -77,9 +77,15 @@ public class ParquetHiveUtil extends HiveUtil {
       throw new HiveMetaStoreException("Cannot find input/output format:", e);
     }
     // convert copycat schema schema to Hive columns
-    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(schema);
+    Schema dpSchema = schema;
+    if (schema.field("after") != null) {
+      dpSchema = schema.field("after").schema();
+    }
+    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(dpSchema);
     table.setFields(columns);
-    table.setPartCols(partitioner.partitionFields());
+    if (partitioner != null) {
+      table.setPartCols(partitioner.partitionFields());
+    }
     return table;
   }
 

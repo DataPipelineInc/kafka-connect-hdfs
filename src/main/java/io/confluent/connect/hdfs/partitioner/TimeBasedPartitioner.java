@@ -14,10 +14,50 @@
 
 package io.confluent.connect.hdfs.partitioner;
 
+import java.util.Locale;
+import java.util.Map;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.kafka.common.config.ConfigException;
+import org.joda.time.DateTimeZone;
 
 @Deprecated
 public class TimeBasedPartitioner
     extends io.confluent.connect.storage.partitioner.TimeBasedPartitioner<FieldSchema>
     implements Partitioner {
+
+  @Override
+  public void configure(Map<String, Object> config) {
+    long partitionDurationMsProp =
+        Long.parseLong(String.valueOf(config.get("partition.duration.ms")));
+    if (partitionDurationMsProp < 0L) {
+      throw new ConfigException(
+          "partition.duration.ms",
+          partitionDurationMsProp,
+          "Partition duration needs to be a positive.");
+    } else {
+      String delim = (String) config.get("directory.delim");
+      String pathFormat = (String) config.get("path.format");
+      if (!pathFormat.equals("") && !pathFormat.equals(delim)) {
+        if (delim.equals(pathFormat.substring(pathFormat.length() - delim.length() - 1))) {
+          pathFormat = pathFormat.substring(0, pathFormat.length() - delim.length());
+        }
+
+        String localeString = (String) config.get("locale");
+        if (localeString.equals("")) {
+          throw new ConfigException("locale", localeString, "Locale cannot be empty.");
+        } else {
+          String timeZoneString = (String) config.get("timezone");
+          if (timeZoneString.equals("")) {
+            throw new ConfigException("timezone", timeZoneString, "Timezone cannot be empty.");
+          } else {
+            Locale locale = new Locale(localeString);
+            DateTimeZone timeZone = DateTimeZone.forID(timeZoneString);
+            this.init(partitionDurationMsProp, pathFormat, locale, timeZone, config);
+          }
+        }
+      } else {
+        throw new ConfigException("path.format", pathFormat, "Path format cannot be empty.");
+      }
+    }
+  }
 }
