@@ -17,6 +17,7 @@ package io.confluent.connect.hdfs;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
@@ -368,7 +369,7 @@ public class TopicPartitionWriter {
             currentRecord = record;
             Schema valueSchema = record.valueSchema();
             if ((recordCounter <= 0 && currentSchema == null && valueSchema != null)
-                || compatibility.shouldChangeSchema(record, null, currentSchema)) {
+                || shouldChangeSchema(record, null, currentSchema)) {
               currentSchema = valueSchema;
               if (hiveIntegration) {
                 createHiveTable();
@@ -426,7 +427,7 @@ public class TopicPartitionWriter {
         failureTime = time.milliseconds();
         setRetryTimeout(timeoutMs);
         break;
-      }finally{
+      } finally {
         if (buffer.isEmpty()) {
           isFlushing = false;
         }
@@ -455,6 +456,25 @@ public class TopicPartitionWriter {
 
       //resume();
       state = State.WRITE_STARTED;
+    }
+  }
+
+  private boolean shouldChangeSchema(
+      ConnectRecord<?> record, Schema currentKeySchema, Schema currentValueSchema) {
+    try {
+      Schema recordSchema = record.valueSchema();
+      if (recordSchema == null && currentValueSchema == null) {
+        return false;
+      } else if (recordSchema != null && currentValueSchema != null) {
+        Schema after = recordSchema.field("after").schema();
+        return after.version().compareTo(currentValueSchema.version()) > 0;
+      } else {
+        return false;
+        //      throw new SchemaProjectorException(
+        //          "Switch between schema-based and schema-less data is not supported");
+      }
+    } catch (Exception e) {
+      return false;
     }
   }
 
