@@ -14,11 +14,16 @@
 
 package io.confluent.connect.hdfs;
 
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map.Entry;
+import java.util.Objects;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaProjector;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.errors.IllegalWorkerStateException;
@@ -369,7 +374,7 @@ public class TopicPartitionWriter {
             currentRecord = record;
             Schema valueSchema = record.valueSchema();
             if ((recordCounter <= 0 && currentSchema == null && valueSchema != null)
-                || shouldChangeSchema(record, null, currentSchema)) {
+                || shouldChangeSchema(record, currentSchema)) {
               currentSchema = valueSchema;
               if (hiveIntegration) {
                 createHiveTable();
@@ -392,7 +397,7 @@ public class TopicPartitionWriter {
                 nextState();
                 // Fall through and try to rotate immediately
               } else {
-                SinkRecord projectedRecord = compatibility.project(record, null, currentSchema);
+                SinkRecord projectedRecord = projectRecord(record, currentSchema);
                 writeRecord(projectedRecord);
                 buffer.poll();
                 log.debug("current sink record writen into temp file is {}", record);
@@ -459,15 +464,46 @@ public class TopicPartitionWriter {
     }
   }
 
+  private SinkRecord projectRecord(SinkRecord record, Schema currentSchema) {
+    Schema recordSchema = record.valueSchema();
+    Object recordValue = record.value();
+    if (recordSchema.field("after") != null) {
+      recordSchema = recordSchema.field("after").schema();
+      recordValue = ((Struct) record.value()).get("after");
+    }
+    Object value =
+        Objects.equals(recordSchema, currentSchema)
+            ? recordValue
+            : SchemaProjector.project(recordSchema, recordValue, currentSchema);
+    Entry<Object, Object> projected = new SimpleEntry(record.key(), value);
+    return projected.getKey() == record.key() && projected.getValue() == recordValue
+        ? record
+        : new SinkRecord(
+            record.topic(),
+            record.kafkaPartition(),
+            null,
+            projected.getKey(),
+            currentSchema,
+            projected.getValue(),
+            record.kafkaOffset(),
+            record.timestamp(),
+            record.timestampType());
+  }
+
   private boolean shouldChangeSchema(
-      ConnectRecord<?> record, Schema currentKeySchema, Schema currentValueSchema) {
+      ConnectRecord<?> record, Schema currentValueSchema) {
     try {
       Schema recordSchema = record.valueSchema();
+      if (recordSchema.field("after") != null) {
+        recordSchema = recordSchema.field("after").schema();
+      }
+      if (currentValueSchema.field("after") != null) {
+        currentValueSchema = currentValueSchema.field("after").schema();
+      }
       if (recordSchema == null && currentValueSchema == null) {
         return false;
       } else if (recordSchema != null && currentValueSchema != null) {
-        Schema after = recordSchema.field("after").schema();
-        return after.version().compareTo(currentValueSchema.version()) > 0;
+        return Objects.equals(recordSchema, currentValueSchema);
       } else {
         return false;
         //      throw new SchemaProjectorException(
