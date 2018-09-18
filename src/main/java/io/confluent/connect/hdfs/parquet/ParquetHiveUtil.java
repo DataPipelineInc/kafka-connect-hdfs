@@ -1,19 +1,19 @@
 /**
  * Copyright 2015 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package io.confluent.connect.hdfs.parquet;
 
+import io.confluent.connect.hdfs.hive.HiveConverter;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -29,7 +29,6 @@ import io.confluent.connect.hdfs.hive.HiveUtil;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.storage.common.StorageCommonConfig;
 import io.confluent.connect.storage.errors.HiveMetaStoreException;
-import io.confluent.connect.storage.hive.HiveSchemaConverter;
 
 public class ParquetHiveUtil extends HiveUtil {
   private final String topicsDir;
@@ -40,30 +39,15 @@ public class ParquetHiveUtil extends HiveUtil {
   }
 
   @Override
-  public void createTable(
-      String database,
-      String tableName,
-      Schema schema,
-      Partitioner partitioner
-  ) throws HiveMetaStoreException {
+  public void createTable(String database, String tableName, Schema schema, Partitioner partitioner)
+      throws HiveMetaStoreException {
     Table table = constructParquetTable(database, tableName, schema, partitioner);
     hiveMetaStore.createTable(table);
   }
 
-  @Override
-  public void alterSchema(String database, String tableName, Schema schema) {
-    Table table = hiveMetaStore.getTable(database, tableName);
-    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(schema);
-    table.setFields(columns);
-    hiveMetaStore.alterTable(table);
-  }
-
   private Table constructParquetTable(
-      String database,
-      String tableName,
-      Schema schema,
-      Partitioner partitioner
-  ) throws HiveMetaStoreException {
+      String database, String tableName, Schema schema, Partitioner partitioner)
+      throws HiveMetaStoreException {
     Table table = newTable(database, tableName);
     table.setTableType(TableType.EXTERNAL_TABLE);
     table.getParameters().put("EXTERNAL", "TRUE");
@@ -77,11 +61,7 @@ public class ParquetHiveUtil extends HiveUtil {
       throw new HiveMetaStoreException("Cannot find input/output format:", e);
     }
     // convert copycat schema schema to Hive columns
-    Schema dpSchema = schema;
-    if (schema.field("after") != null) {
-      dpSchema = schema.field("after").schema();
-    }
-    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(dpSchema);
+    List<FieldSchema> columns = HiveConverter.convertSchema(schema);
     table.setFields(columns);
     if (partitioner != null) {
       table.setPartCols(partitioner.partitionFields());

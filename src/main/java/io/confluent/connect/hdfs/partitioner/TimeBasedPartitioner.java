@@ -14,13 +14,14 @@
 
 package io.confluent.connect.hdfs.partitioner;
 
+import io.confluent.connect.storage.partitioner.TimestampExtractor;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.joda.time.DateTimeZone;
 
-@Deprecated
 public class TimeBasedPartitioner
     extends io.confluent.connect.storage.partitioner.TimeBasedPartitioner<FieldSchema>
     implements Partitioner {
@@ -58,6 +59,41 @@ public class TimeBasedPartitioner
       } else {
         throw new ConfigException("path.format", pathFormat, "Path format cannot be empty.");
       }
+    }
+  }
+
+  @Override
+  public TimestampExtractor newTimestampExtractor(String extractorClassName) {
+    try {
+      switch (extractorClassName) {
+        case "Wallclock":
+        case "Record":
+          extractorClassName =
+              "io.confluent.connect.storage.partitioner.TimeBasedPartitioner$"
+                  + extractorClassName
+                  + "TimestampExtractor";
+          break;
+        case "RecordField":
+          extractorClassName =
+              io.confluent.connect.hdfs.partitioner.RecordFieldTimestampExtractor.class.getName();
+          break;
+        default:
+          throw new ClassNotFoundException(String.format("Class not find %s", extractorClassName));
+      }
+      Class<?> klass = Class.forName(extractorClassName);
+      if (!TimestampExtractor.class.isAssignableFrom(klass)) {
+        throw new ConnectException(
+            "Class " + extractorClassName + " does not implement TimestampExtractor");
+      }
+      return (TimestampExtractor) klass.newInstance();
+    } catch (ClassNotFoundException
+        | ClassCastException
+        | IllegalAccessException
+        | InstantiationException e) {
+      ConfigException ce =
+          new ConfigException("Invalid timestamp extractor: " + extractorClassName);
+      ce.initCause(e);
+      throw ce;
     }
   }
 }

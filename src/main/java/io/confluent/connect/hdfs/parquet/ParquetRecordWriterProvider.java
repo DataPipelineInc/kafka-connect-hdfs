@@ -59,11 +59,11 @@ public class ParquetRecordWriterProvider
       @Override
       public void write(SinkRecord record) {
         if (schema == null) {
-          schema = record.valueSchema().field("after").schema();
+          schema = record.valueSchema().schema();
           try {
             log.info("Opening record writer for: {}", filename);
             org.apache.avro.Schema avroSchema =
-                avroData.fromConnectSchema(schema).getTypes().get(1);
+                avroData.fromConnectSchema(schema);
             writer =
                 new AvroParquetWriter<>(
                     path,
@@ -80,7 +80,7 @@ public class ParquetRecordWriterProvider
 
         log.trace("Sink record: {}", record.toString());
         //        Object value = avroData.fromConnectData(record.valueSchema(), record.value());
-        Object value = avroData.fromConnectData(schema, ((Struct) record.value()).get("after"));
+        Object value = avroData.fromConnectData(schema, record.value());
         try {
           writer.write((GenericRecord) value);
         } catch (IOException e) {

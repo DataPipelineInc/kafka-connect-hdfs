@@ -14,7 +14,9 @@
 
 package io.confluent.connect.hdfs.hive;
 
+import java.util.List;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.kafka.connect.data.Schema;
 
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
@@ -54,4 +56,11 @@ public abstract class HiveUtil extends io.confluent.connect.storage.hive.HiveUti
       Partitioner partitioner
   );
 
+  @Override
+  public void alterSchema(String database, String tableName, Schema schema) {
+    Table table = hiveMetaStore.getTable(database, tableName);
+    List<FieldSchema> columns = HiveConverter.convertSchema(schema);
+    table.setFields(columns);
+    hiveMetaStore.alterTable(table);
+  }
 }

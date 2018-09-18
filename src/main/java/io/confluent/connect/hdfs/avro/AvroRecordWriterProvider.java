@@ -60,13 +60,13 @@ public class AvroRecordWriterProvider
       @Override
       public void write(SinkRecord record) {
         if (schema == null) {
-          schema = record.valueSchema().field("after").schema();
+          schema = record.valueSchema();
           try {
             log.info("Opening record writer for: {}", filename);
             final FSDataOutputStream out = path.getFileSystem(conf.getHadoopConfiguration())
                 .create(path);
             org.apache.avro.Schema avroSchema =
-                      avroData.fromConnectSchema(schema).getTypes().get(1);
+                      avroData.fromConnectSchema(schema);
             writer.create(avroSchema, out);
           } catch (IOException e) {
             throw new ConnectException(e);
@@ -74,7 +74,7 @@ public class AvroRecordWriterProvider
         }
 
         log.trace("Sink record: {}", record.toString());
-        Object value = avroData.fromConnectData(schema, ((Struct) record.value()).get("after"));
+        Object value = avroData.fromConnectData(schema, record.value());
         try {
           // AvroData wraps primitive types so their schema can be included. We need to unwrap
           // NonRecordContainers to just their value to properly handle these types

@@ -397,8 +397,7 @@ public class TopicPartitionWriter {
                 nextState();
                 // Fall through and try to rotate immediately
               } else {
-                SinkRecord projectedRecord = projectRecord(record, currentSchema);
-                writeRecord(projectedRecord);
+                writeRecord(record);
                 buffer.poll();
                 log.debug("current sink record writen into temp file is {}", record);
                 break;
@@ -464,46 +463,16 @@ public class TopicPartitionWriter {
     }
   }
 
-  private SinkRecord projectRecord(SinkRecord record, Schema currentSchema) {
-    Schema recordSchema = record.valueSchema();
-    Object recordValue = record.value();
-    if (recordSchema.field("after") != null) {
-      recordSchema = recordSchema.field("after").schema();
-      recordValue = ((Struct) record.value()).get("after");
-    }
-    Object value =
-        Objects.equals(recordSchema, currentSchema)
-            ? recordValue
-            : SchemaProjector.project(recordSchema, recordValue, currentSchema);
-    Entry<Object, Object> projected = new SimpleEntry(record.key(), value);
-    return projected.getKey() == record.key() && projected.getValue() == recordValue
-        ? record
-        : new SinkRecord(
-            record.topic(),
-            record.kafkaPartition(),
-            null,
-            projected.getKey(),
-            currentSchema,
-            projected.getValue(),
-            record.kafkaOffset(),
-            record.timestamp(),
-            record.timestampType());
-  }
-
   private boolean shouldChangeSchema(
       ConnectRecord<?> record, Schema currentValueSchema) {
     try {
       Schema recordSchema = record.valueSchema();
-      if (recordSchema.field("after") != null) {
-        recordSchema = recordSchema.field("after").schema();
-      }
-      if (currentValueSchema.field("after") != null) {
-        currentValueSchema = currentValueSchema.field("after").schema();
-      }
       if (recordSchema == null && currentValueSchema == null) {
         return false;
-      } else if (recordSchema != null && currentValueSchema != null) {
-        return Objects.equals(recordSchema, currentValueSchema);
+      } else if (recordSchema != null
+          && currentValueSchema != null
+          && Objects.equals(recordSchema.name(), currentValueSchema.name())) {
+        return !Objects.equals(recordSchema, currentValueSchema);
       } else {
         return false;
         //      throw new SchemaProjectorException(

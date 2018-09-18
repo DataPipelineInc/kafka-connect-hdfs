@@ -1,12 +1,12 @@
 package io.confluent.connect.hdfs.csv;
 
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
+import io.confluent.connect.hdfs.hive.HiveConverter;
 import io.confluent.connect.hdfs.hive.HiveMetaStore;
 import io.confluent.connect.hdfs.hive.HiveUtil;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.storage.common.StorageCommonConfig;
 import io.confluent.connect.storage.errors.HiveMetaStoreException;
-import io.confluent.connect.storage.hive.HiveSchemaConverter;
 import java.util.List;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -34,14 +34,6 @@ public class CsvHiveUtil extends HiveUtil {
     hiveMetaStore.createTable(table);
   }
 
-  @Override
-  public void alterSchema(String database, String tableName, Schema schema) {
-    Table table = hiveMetaStore.getTable(database, tableName);
-    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(schema);
-    table.setFields(columns);
-    hiveMetaStore.alterTable(table);
-  }
-
   private Table constructCsvTable(
       String database, String tableName, Schema schema, Partitioner partitioner)
       throws HiveMetaStoreException {
@@ -57,11 +49,7 @@ public class CsvHiveUtil extends HiveUtil {
     } catch (HiveException e) {
       throw new HiveMetaStoreException("Cannot find input/output format:", e);
     }
-    Schema dpSchema = schema;
-    if (schema.field("after") != null) {
-      dpSchema = schema.field("after").schema();
-    }
-    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(dpSchema);
+    List<FieldSchema> columns = HiveConverter.convertSchema(schema);
     table.setFields(columns);
     if (partitioner != null) {
       table.setPartCols(partitioner.partitionFields());

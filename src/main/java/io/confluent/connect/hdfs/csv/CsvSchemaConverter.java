@@ -29,6 +29,9 @@ public class CsvSchemaConverter {
 
   public static Schema getSchema(String typeInfoName) {
     TypeInfo typeInfo = TypeInfoUtils.getTypeInfoFromTypeString(typeInfoName);
+    if (typeInfo == null) {
+      return Schema.STRING_SCHEMA;
+    }
     return getSchema(typeInfo);
   }
 }
