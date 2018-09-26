@@ -30,7 +30,7 @@
   <artifactId>kafka-connect-hdfs</artifactId>
   <packaging>pom</packaging>
   <name>kafka-connect-hdfs</name>
-  <version>4.0.0-dp5</version>
+  <version>4.0.0-dp5-cdh</version>
   <organization>
     <name>Confluent, Inc.</name>
     <url>http://confluent.io</url>
@@ -94,6 +94,11 @@
       <id>confluent</id>
       <name>Confluent</name>
       <url>${confluent.maven.repo}</url>
+    </repository>
+    <repository>
+      <id>cloudera</id>
+      <name>Cloudera</name>
+      <url>https://repository.cloudera.com/content/repositories/releases/</url>
     </repository>
   </repositories>
 

@@ -23,20 +23,14 @@
   <parent>
     <groupId>io.confluent</groupId>
     <artifactId>kafka-connect-hdfs</artifactId>
-    <version>4.0.0-dp5</version>
+    <version>4.0.0-dp5-cdh</version>
   </parent>
 
   <artifactId>kafka-connect-storage-hive</artifactId>
   <packaging>jar</packaging>
   <name>kafka-connect-storage-hive</name>
 
-  <repositories>
-    <repository>
-      <id>cloudera</id>
-      <name>Cloudera</name>
-      <url>https://repository.cloudera.com/content/repositories/releases/</url>
-    </repository>
-  </repositories>
+
 
   <dependencies>
     <!--<dependency>-->
