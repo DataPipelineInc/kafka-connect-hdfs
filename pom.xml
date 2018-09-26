@@ -28,7 +28,7 @@
 
   <groupId>io.confluent</groupId>
   <artifactId>kafka-connect-hdfs</artifactId>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>kafka-connect-hdfs</name>
   <version>4.0.0-dp5</version>
   <organization>
@@ -57,7 +57,8 @@
 
   <properties>
     <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
-    <hadoop.version>2.7.3</hadoop.version>
+    <hadoop.version>2.6.0</hadoop.version>
+    <hive.version>1.1.0-cdh5.8.5</hive.version>
     <apacheds-jdbm1.version>2.0.0-M2</apacheds-jdbm1.version>
 
     <!--jacoco prepare-agent needs argLine defined to set this variable. if we don't have a default set then maven gets angry.-->
@@ -96,6 +97,11 @@
     </repository>
   </repositories>
 
+  <modules>
+    <module>core</module>
+    <module>hive</module>
+  </modules>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.kafka</groupId>
@@ -113,6 +119,12 @@
       <groupId>io.confluent</groupId>
       <artifactId>kafka-connect-storage-common</artifactId>
       <version>${confluent.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.confluent</groupId>
+          <artifactId>kafka-connect-storage-hive</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.confluent</groupId>
@@ -223,20 +235,20 @@
         </configuration>
       </plugin>
       <!--<plugin>-->
-        <!--<groupId>org.apache.maven.plugins</groupId>-->
-        <!--<artifactId>maven-checkstyle-plugin</artifactId>-->
-        <!--<executions>-->
-          <!--<execution>-->
-            <!--<id>validate</id>-->
-            <!--<phase>validate</phase>-->
-            <!--<configuration>-->
-              <!--<suppressionsLocation>checkstyle/suppressions.xml</suppressionsLocation>-->
-            <!--</configuration>-->
-            <!--<goals>-->
-              <!--<goal>check</goal>-->
-            <!--</goals>-->
-          <!--</execution>-->
-        <!--</executions>-->
+      <!--<groupId>org.apache.maven.plugins</groupId>-->
+      <!--<artifactId>maven-checkstyle-plugin</artifactId>-->
+      <!--<executions>-->
+      <!--<execution>-->
+      <!--<id>validate</id>-->
+      <!--<phase>validate</phase>-->
+      <!--<configuration>-->
+      <!--<suppressionsLocation>checkstyle/suppressions.xml</suppressionsLocation>-->
+      <!--</configuration>-->
+      <!--<goals>-->
+      <!--<goal>check</goal>-->
+      <!--</goals>-->
+      <!--</execution>-->
+      <!--</executions>-->
       <!--</plugin>-->
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>

@@ -1,12 +1,12 @@
 package io.confluent.connect.hdfs.csv;
 
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
-import io.confluent.connect.hdfs.hive.HiveConverter;
 import io.confluent.connect.hdfs.hive.HiveMetaStore;
 import io.confluent.connect.hdfs.hive.HiveUtil;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.storage.common.StorageCommonConfig;
 import io.confluent.connect.storage.errors.HiveMetaStoreException;
+import io.confluent.connect.storage.hive.HiveSchemaConverter;
 import java.util.List;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -49,7 +49,7 @@ public class CsvHiveUtil extends HiveUtil {
     } catch (HiveException e) {
       throw new HiveMetaStoreException("Cannot find input/output format:", e);
     }
-    List<FieldSchema> columns = HiveConverter.convertSchema(schema);
+    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(schema);
     table.setFields(columns);
     if (partitioner != null) {
       table.setPartCols(partitioner.partitionFields());

@@ -13,7 +13,7 @@
  */
 package io.confluent.connect.hdfs.avro;
 
-import io.confluent.connect.hdfs.hive.HiveConverter;
+import io.confluent.connect.storage.hive.HiveSchemaConverter;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -83,7 +83,7 @@ public class AvroHiveUtil extends HiveUtil {
       throw new HiveMetaStoreException("Cannot find input/output format:", e);
     }
     org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(schema);
-    List<FieldSchema> columns = HiveConverter.convertSchema(schema);
+    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(schema);
     table.setFields(columns);
     if (partitioner != null) {
       table.setPartCols(partitioner.partitionFields());

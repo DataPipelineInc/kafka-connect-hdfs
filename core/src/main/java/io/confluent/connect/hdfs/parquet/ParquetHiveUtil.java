@@ -13,22 +13,21 @@
  */
 package io.confluent.connect.hdfs.parquet;
 
-import io.confluent.connect.hdfs.hive.HiveConverter;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hive.metastore.TableType;
-import org.apache.hadoop.hive.metastore.api.FieldSchema;
-import org.apache.hadoop.hive.ql.metadata.HiveException;
-import org.apache.hadoop.hive.ql.metadata.Table;
-import org.apache.kafka.connect.data.Schema;
-
-import java.util.List;
-
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.hive.HiveMetaStore;
 import io.confluent.connect.hdfs.hive.HiveUtil;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
 import io.confluent.connect.storage.common.StorageCommonConfig;
 import io.confluent.connect.storage.errors.HiveMetaStoreException;
+import io.confluent.connect.storage.hive.HiveSchemaConverter;
+
+import java.util.List;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.metastore.TableType;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
+import org.apache.hadoop.hive.ql.metadata.Table;
+import org.apache.kafka.connect.data.Schema;
 
 public class ParquetHiveUtil extends HiveUtil {
   private final String topicsDir;
@@ -61,7 +60,7 @@ public class ParquetHiveUtil extends HiveUtil {
       throw new HiveMetaStoreException("Cannot find input/output format:", e);
     }
     // convert copycat schema schema to Hive columns
-    List<FieldSchema> columns = HiveConverter.convertSchema(schema);
+    List<FieldSchema> columns = HiveSchemaConverter.convertSchema(schema);
     table.setFields(columns);
     if (partitioner != null) {
       table.setPartCols(partitioner.partitionFields());
