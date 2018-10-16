@@ -73,6 +73,11 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
   private static final String HADOOP_HOME_DOC = "The Hadoop home directory.";
   private static final String HADOOP_HOME_DISPLAY = "Hadoop home directory";
 
+  public static final String HADOOP_USER = "hadoop.user";
+  public static final String HADOOP_USER_DEFAULT = "root";
+  private static final String HADOOP_USER_DOC = "The Hadoop user.";
+  private static final String HADOOP_USER_DISPLAY = "Hadoop user";
+
   public static final String LOGS_DIR_CONFIG = "logs.dir";
   public static final String LOGS_DIR_DOC =
       "Top level directory to store the write ahead logs.";
@@ -273,6 +278,17 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
           KERBEROS_TICKET_RENEW_PERIOD_MS_DISPLAY,
           hdfsAuthenticationKerberosDependentsRecommender
       );
+
+      configDef.define(
+          HADOOP_USER,
+          Type.STRING,
+          HADOOP_USER_DEFAULT,
+          Importance.HIGH,
+          HADOOP_USER_DOC,
+          group,
+          ++orderInGroup,
+          Width.MEDIUM,
+          HADOOP_USER_DISPLAY);
     }
     // Put the storage group(s) last ...
     ConfigDef storageConfigDef = StorageSinkConnectorConfig.newConfigDef(FORMAT_CLASS_RECOMMENDER);

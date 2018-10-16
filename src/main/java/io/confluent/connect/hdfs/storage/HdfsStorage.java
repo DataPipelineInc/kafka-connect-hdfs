@@ -50,10 +50,12 @@ public class HdfsStorage
     this.fs = fs;
   }
 
-  public HdfsStorage(HdfsSinkConnectorConfig conf,  String url) throws IOException {
+  public HdfsStorage(HdfsSinkConnectorConfig conf, String url)
+      throws IOException, InterruptedException {
     this.conf = conf;
     this.url = url;
-    fs = FileSystem.newInstance(URI.create(url), conf.getHadoopConfiguration());
+    String user = conf.getString(HdfsSinkConnectorConfig.HADOOP_USER);
+    fs = FileSystem.newInstance(URI.create(url), conf.getHadoopConfiguration(), user);
   }
 
   public List<FileStatus> list(String path, PathFilter filter) {
