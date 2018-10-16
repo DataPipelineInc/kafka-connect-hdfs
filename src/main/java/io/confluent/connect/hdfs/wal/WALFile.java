@@ -71,7 +71,7 @@ public class WALFile {
   public static Writer createWriter(
       HdfsSinkConnectorConfig conf,
       Writer.Option... opts
-  ) throws IOException {
+  ) throws IOException, InterruptedException {
     return new Writer(conf, opts);
   }
 
@@ -106,7 +106,7 @@ public class WALFile {
       }
     }
 
-    Writer(HdfsSinkConnectorConfig connectorConfig, Option... opts) throws IOException {
+    Writer(HdfsSinkConnectorConfig connectorConfig, Option... opts) throws IOException, InterruptedException {
       Configuration conf = connectorConfig.getHadoopConfiguration();
       BlockSizeOption blockSizeOption =
           Options.getOption(BlockSizeOption.class, opts);
@@ -140,7 +140,8 @@ public class WALFile {
       try {
         if (ownStream) {
           Path p = fileOption.getValue();
-          fs = p.getFileSystem(conf);
+          String user = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_USER);
+          fs = FileSystem.get(p.toUri(),conf,user);
           int bufferSize = bufferSizeOption == null
                            ? getBufferSize(conf)
                            : bufferSizeOption.getValue();
@@ -154,7 +155,7 @@ public class WALFile {
           if (appendIfExistsOption != null && appendIfExistsOption.getValue() && fs.exists(p)) {
             // Read the file and verify header details
             try (WALFile.Reader reader = new WALFile.Reader(
-                connectorConfig.getHadoopConfiguration(),
+                connectorConfig,
                 WALFile.Reader.file(p),
                 new Reader.OnlyHeaderOption()
             )) {
@@ -182,7 +183,6 @@ public class WALFile {
         }
         throw re;
       }
-
     }
 
     public static Option file(Path value) {
@@ -395,7 +395,7 @@ public class WALFile {
     private long end;
     private int keyLength;
     private int recordLength;
-
+    private HdfsSinkConnectorConfig  connectorConfig;
     private Configuration conf;
 
     private DataInputBuffer valBuffer = null;
@@ -403,13 +403,14 @@ public class WALFile {
     private Deserializer<WALEntry> keyDeserializer;
     private Deserializer<WALEntry> valDeserializer;
 
-    public Reader(Configuration conf, Option... opts) throws IOException {
+    public Reader(HdfsSinkConnectorConfig conf, Option... opts) throws IOException, InterruptedException {
       // Look up the options, these are null if not set
       FileOption fileOpt = Options.getOption(FileOption.class, opts);
       InputStreamOption streamOpt = Options.getOption(InputStreamOption.class, opts);
       LengthOption lenOpt = Options.getOption(LengthOption.class, opts);
       BufferSizeOption bufOpt = Options.getOption(BufferSizeOption.class, opts);
-
+      this.connectorConfig = conf;
+      this.conf = connectorConfig.getHadoopConfiguration();
       // check for consistency
       if ((fileOpt == null) == (streamOpt == null)) {
         throw new
@@ -428,8 +429,9 @@ public class WALFile {
       try {
         if (fileOpt != null) {
           filename = fileOpt.getValue();
-          fs = filename.getFileSystem(conf);
-          int bufSize = bufOpt == null ? getBufferSize(conf) : bufOpt.getValue();
+          String user = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_USER);
+          fs = FileSystem.get(filename.toUri(), this.conf, user);
+          int bufSize = bufOpt == null ? getBufferSize(this.conf) : bufOpt.getValue();
           len = null == lenOpt
                 ? fs.getFileStatus(filename).getLen()
                 : lenOpt.getValue();
@@ -442,7 +444,7 @@ public class WALFile {
         long start = startOpt == null ? 0 : startOpt.getValue();
         // really set up
         OnlyHeaderOption headerOnly = Options.getOption(OnlyHeaderOption.class, opts);
-        initialize(filename, file, start, len, conf, headerOnly != null);
+        initialize(filename, file, start, len, this.conf, headerOnly != null);
       } catch (RemoteException re) {
         log.error("Failed creating a WAL Reader: " + re.getMessage());
         if (re.getClassName().equals(WALConstants.LEASE_EXCEPTION_CLASS_NAME)) {

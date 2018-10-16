@@ -89,6 +89,8 @@ public class FSWAL implements WAL {
         }
       } catch (IOException e) {
         throw new DataException("Error creating writer for log file " + logFile, e);
+      } catch (InterruptedException e) {
+          throw new ConnectException(e);
       }
     }
     if (sleepIntervalMs >= WALConstants.MAX_SLEEP_INTERVAL_MS) {
@@ -104,7 +106,7 @@ public class FSWAL implements WAL {
       }
       acquireLease();
       if (reader == null) {
-        reader = new WALFile.Reader(conf.getHadoopConfiguration(), Reader.file(new Path(logFile)));
+        reader = new WALFile.Reader(conf, Reader.file(new Path(logFile)));
       }
       Map<WALEntry, WALEntry> entries = new HashMap<>();
       WALEntry key = new WALEntry();
@@ -127,7 +129,7 @@ public class FSWAL implements WAL {
           entries.put(mapKey, mapValue);
         }
       }
-    } catch (IOException e) {
+    } catch (IOException|InterruptedException e) {
       log.error("Error applying WAL file: {}, {}", logFile, e);
       close();
       throw new DataException(e);

@@ -35,17 +35,12 @@ public class CsvRecordWriterProvider
       @Override
       public void write(SinkRecord record) {
         try {
-          Configuration hadoopConfiguration = conf.getHadoopConfiguration();
-          hadoopConfiguration.setBoolean("dfs.support.append", true);
-          hadoopConfiguration.set(
-              "dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER");
-          hadoopConfiguration.set(
-              "dfs.client.block.write.replace-datanode-on-failure.enable", "true");
+
           String delimiter = Optional.of(conf.getString(FILE_DELIMITER)).orElse(",");
-          writer = new CsvHdfsWriter(hadoopConfiguration, delimiter);
+          writer = new CsvHdfsWriter(conf, delimiter);
           writeTemp(record);
           writer.append(newPath, path, 4096);
-        } catch (IOException | JSONException e) {
+        } catch (IOException | JSONException | InterruptedException e) {
           throw new ConnectException(e);
         }
       }
