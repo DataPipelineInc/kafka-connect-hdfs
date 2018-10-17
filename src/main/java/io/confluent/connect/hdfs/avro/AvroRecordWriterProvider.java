@@ -17,9 +17,9 @@ package io.confluent.connect.hdfs.avro;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -63,12 +63,12 @@ public class AvroRecordWriterProvider
           schema = record.valueSchema();
           try {
             log.info("Opening record writer for: {}", filename);
-            final FSDataOutputStream out = path.getFileSystem(conf.getHadoopConfiguration())
-                .create(path);
-            org.apache.avro.Schema avroSchema =
-                      avroData.fromConnectSchema(schema);
+            String user = conf.getString(HdfsSinkConnectorConfig.HADOOP_USER);
+            FileSystem fs = FileSystem.get(path.toUri(), conf.getHadoopConfiguration(), user);
+            final FSDataOutputStream out = fs.create(path);
+            org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(schema);
             writer.create(avroSchema, out);
-          } catch (IOException e) {
+          } catch (IOException | InterruptedException e) {
             throw new ConnectException(e);
           }
         }
