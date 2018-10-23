@@ -14,6 +14,7 @@
 
 package io.confluent.connect.hdfs.wal;
 
+import io.confluent.connect.hdfs.storage.HdfsStorage;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -140,8 +141,7 @@ public class WALFile {
       try {
         if (ownStream) {
           Path p = fileOption.getValue();
-          String user = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_USER);
-          fs = FileSystem.get(p.toUri(),conf,user);
+          fs = HdfsStorage.instanceFS(p.toUri(), connectorConfig);
           int bufferSize = bufferSizeOption == null
                            ? getBufferSize(conf)
                            : bufferSizeOption.getValue();
@@ -429,8 +429,11 @@ public class WALFile {
       try {
         if (fileOpt != null) {
           filename = fileOpt.getValue();
-          String user = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_USER);
-          fs = FileSystem.get(filename.toUri(), this.conf, user);
+          if (filename == null) {
+            fs = HdfsStorage.instanceFS(null, connectorConfig);
+          } else {
+            fs = HdfsStorage.instanceFS(filename.toUri(), connectorConfig);
+          }
           int bufSize = bufOpt == null ? getBufferSize(this.conf) : bufOpt.getValue();
           len = null == lenOpt
                 ? fs.getFileStatus(filename).getLen()
@@ -543,14 +546,22 @@ public class WALFile {
      * @param fs The file system used to open the file.
      * @param file The file being read.
      * @param bufferSize The buffer size used to read the file.
-     * @param length The length being read if it is >= 0.  Otherwise, the length is not available.
+     * @param length The length being read if it is >= 0. Otherwise, the length is not available.
      * @return The opened stream.
      */
-    protected FSDataInputStream openFile(
-        FileSystem fs, Path file,
-        int bufferSize, long length
-    ) throws IOException {
-      return fs.open(file, bufferSize);
+    protected FSDataInputStream openFile(FileSystem fs, Path file, int bufferSize, long length)
+        throws IOException {
+      try {
+        if (file != null && fs.exists(file)) {
+          return fs.open(file, bufferSize);
+        } else {
+          fs.create(file);
+          return fs.open(file, bufferSize);
+        }
+      } catch (IOException e) {
+        fs.deleteOnExit(file);
+        return openFile(fs, file, bufferSize, length);
+      }
     }
 
     /**

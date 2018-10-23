@@ -93,7 +93,8 @@ public class ParquetRecordWriterProvider
           try {
             writer.close();
           } catch (IOException e) {
-            throw new ConnectException(e);
+            //            throw new ConnectException(e);
+            log.error("parquet file close failed", e);
           }
         }
       }

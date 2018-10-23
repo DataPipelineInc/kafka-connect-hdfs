@@ -55,7 +55,7 @@ public class HdfsStorage
       throws IOException, InterruptedException {
     this.conf = conf;
     this.url = url;
-    this.fs = instanceFS(conf);
+    this.fs = instanceFS(null, conf);
   }
 
   public List<FileStatus> list(String path, PathFilter filter) {
@@ -174,9 +174,12 @@ public class HdfsStorage
     }
   }
 
-  public static FileSystem instanceFS(HdfsSinkConnectorConfig conf)
+  public static FileSystem instanceFS(URI uri, HdfsSinkConnectorConfig conf)
       throws IOException, InterruptedException {
-    String url = conf.getString(HdfsSinkConnectorConfig.HDFS_URL_CONFIG);
+    if (uri == null) {
+      String url = conf.getString(HdfsSinkConnectorConfig.HDFS_URL_CONFIG);
+      uri = URI.create(url);
+    }
     String hadoopConfDir = conf.getString(HdfsSinkConnectorConfig.HADOOP_CONF_DIR_CONFIG);
     Configuration hadoopConf = conf.getHadoopConfiguration();
     if (!hadoopConfDir.equals("")) {
@@ -184,7 +187,7 @@ public class HdfsStorage
       hadoopConf.addResource(new Path(hadoopConfDir + "/hdfs-site.xml"));
     }
     String user = conf.getString(HdfsSinkConnectorConfig.HADOOP_USER);
-    return FileSystem.newInstance(URI.create(url), hadoopConf, user);
+    return FileSystem.newInstance(uri, hadoopConf, user);
   }
 
   public FileSystem getFs() {
