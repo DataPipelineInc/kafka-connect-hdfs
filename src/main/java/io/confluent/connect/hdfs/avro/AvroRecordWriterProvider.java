@@ -37,9 +37,11 @@ public class AvroRecordWriterProvider
   private static final Logger log = LoggerFactory.getLogger(AvroRecordWriterProvider.class);
   private static final String EXTENSION = ".avro";
   private final AvroData avroData;
+  private final FileSystem fs;
 
-  AvroRecordWriterProvider(AvroData avroData) {
+  AvroRecordWriterProvider(AvroData avroData,FileSystem fs) {
     this.avroData = avroData;
+    this.fs = fs;
   }
 
   @Override
@@ -63,12 +65,10 @@ public class AvroRecordWriterProvider
           schema = record.valueSchema();
           try {
             log.info("Opening record writer for: {}", filename);
-            String user = conf.getString(HdfsSinkConnectorConfig.HADOOP_USER);
-            FileSystem fs = FileSystem.get(path.toUri(), conf.getHadoopConfiguration(), user);
             final FSDataOutputStream out = fs.create(path);
             org.apache.avro.Schema avroSchema = avroData.fromConnectSchema(schema);
             writer.create(avroSchema, out);
-          } catch (IOException | InterruptedException e) {
+          } catch (IOException e) {
             throw new ConnectException(e);
           }
         }

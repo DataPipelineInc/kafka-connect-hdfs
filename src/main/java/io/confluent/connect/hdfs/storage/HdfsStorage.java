@@ -18,6 +18,7 @@ package io.confluent.connect.hdfs.storage;
 
 import org.apache.avro.file.SeekableInput;
 import org.apache.avro.mapred.FsInput;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -54,8 +55,7 @@ public class HdfsStorage
       throws IOException, InterruptedException {
     this.conf = conf;
     this.url = url;
-    String user = conf.getString(HdfsSinkConnectorConfig.HADOOP_USER);
-    fs = FileSystem.newInstance(URI.create(url), conf.getHadoopConfiguration(), user);
+    this.fs = instanceFS(conf);
   }
 
   public List<FileStatus> list(String path, PathFilter filter) {
@@ -172,5 +172,22 @@ public class HdfsStorage
     } catch (IOException e) {
       throw new ConnectException(e);
     }
+  }
+
+  public static FileSystem instanceFS(HdfsSinkConnectorConfig conf)
+      throws IOException, InterruptedException {
+    String url = conf.getString(HdfsSinkConnectorConfig.HDFS_URL_CONFIG);
+    String hadoopConfDir = conf.getString(HdfsSinkConnectorConfig.HADOOP_CONF_DIR_CONFIG);
+    Configuration hadoopConf = conf.getHadoopConfiguration();
+    if (!hadoopConfDir.equals("")) {
+      hadoopConf.addResource(new Path(hadoopConfDir + "/core-site.xml"));
+      hadoopConf.addResource(new Path(hadoopConfDir + "/hdfs-site.xml"));
+    }
+    String user = conf.getString(HdfsSinkConnectorConfig.HADOOP_USER);
+    return FileSystem.newInstance(URI.create(url), hadoopConf, user);
+  }
+
+  public FileSystem getFs() {
+    return fs;
   }
 }

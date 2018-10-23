@@ -46,6 +46,12 @@ public class CsvHdfsWriter {
     hadoopConfiguration.setBoolean("dfs.support.append", true);
     hadoopConfiguration.set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER");
     hadoopConfiguration.set("dfs.client.block.write.replace-datanode-on-failure.enable", "true");
+    String hadoopConfDir =
+        connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_CONF_DIR_CONFIG);
+    if (!hadoopConfDir.equals("")) {
+      hadoopConfiguration.addResource(new Path(hadoopConfDir + "/core-site.xml"));
+      hadoopConfiguration.addResource(new Path(hadoopConfDir + "/hdfs-site.xml"));
+    }
     this.fs =
         FileSystem.newInstance(
             FileSystem.getDefaultUri(hadoopConfiguration), hadoopConfiguration, user);
