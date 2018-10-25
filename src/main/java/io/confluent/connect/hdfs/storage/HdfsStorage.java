@@ -180,12 +180,7 @@ public class HdfsStorage
       String url = conf.getString(HdfsSinkConnectorConfig.HDFS_URL_CONFIG);
       uri = URI.create(url);
     }
-    String hadoopConfDir = conf.getString(HdfsSinkConnectorConfig.HADOOP_CONF_DIR_CONFIG);
     Configuration hadoopConf = conf.getHadoopConfiguration();
-    if (!hadoopConfDir.equals("")) {
-      hadoopConf.addResource(new Path(hadoopConfDir + "/core-site.xml"));
-      hadoopConf.addResource(new Path(hadoopConfDir + "/hdfs-site.xml"));
-    }
     String user = conf.getString(HdfsSinkConnectorConfig.HADOOP_USER);
     return FileSystem.newInstance(uri, hadoopConf, user);
   }
