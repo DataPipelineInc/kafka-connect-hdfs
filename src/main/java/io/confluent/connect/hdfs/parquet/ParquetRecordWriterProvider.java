@@ -81,7 +81,9 @@ public class ParquetRecordWriterProvider
         //        Object value = avroData.fromConnectData(record.valueSchema(), record.value());
         Object value = avroData.fromConnectData(schema, record.value());
         try {
-          writer.write((GenericRecord) value);
+          if (value != null) {
+            writer.write((GenericRecord) value);
+          }
         } catch (IOException e) {
           throw new ConnectException(e);
         }
@@ -93,8 +95,10 @@ public class ParquetRecordWriterProvider
           try {
             writer.close();
           } catch (IOException e) {
-            //            throw new ConnectException(e);
+            throw new ConnectException(e);
+          } catch (Exception e) {
             log.error("parquet file close failed", e);
+            throw new ConnectException(e);
           }
         }
       }

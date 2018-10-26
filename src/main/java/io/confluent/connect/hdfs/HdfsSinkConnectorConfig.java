@@ -16,6 +16,8 @@ package io.confluent.connect.hdfs;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -299,7 +301,7 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
 
       configDef.define(
           HADOOP_CONF_FILES,
-          Type.LIST,
+          Type.STRING,
           HADOOP_CONF_FILES_DEFAULT,
           Importance.HIGH,
           HADOOP_CONF_FILES_DOC,
@@ -471,7 +473,8 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
   }
 
   public List<String> getHadoopConfFiles() {
-    return getList(HADOOP_CONF_FILES);
+    return Stream.of(this.originalsStrings().get(HADOOP_CONF_FILES).split(","))
+        .collect(Collectors.toList());
   }
 
   public static void main(String[] args) {

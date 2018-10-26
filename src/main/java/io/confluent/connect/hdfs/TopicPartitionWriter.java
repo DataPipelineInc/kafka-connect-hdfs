@@ -402,7 +402,11 @@ public class TopicPartitionWriter {
             }
           case SHOULD_ROTATE:
             updateRotationTimers(currentRecord);
-            closeTempFile();
+            try {
+              closeTempFile();
+            } catch (Exception e) {
+              continue;
+            }
             log.debug("temp file closed");
             nextState();
           case TEMP_FILE_CLOSED:
@@ -692,8 +696,12 @@ public class TopicPartitionWriter {
   private void closeTempFile(String encodedPartition) {
     if (writers.containsKey(encodedPartition)) {
       io.confluent.connect.storage.format.RecordWriter writer = writers.get(encodedPartition);
-      writer.close();
-      writers.remove(encodedPartition);
+      try {
+        writer.close();
+        writers.remove(encodedPartition);
+      } catch (Exception e) {
+        throw new ConnectException("file close failed");
+      }
     }
   }
 
