@@ -559,8 +559,14 @@ public class WALFile {
           return fs.open(file, bufferSize);
         }
       } catch (IOException e) {
+        log.error("open file failed : " + e.getMessage());
         fs.deleteOnExit(file);
-        return openFile(fs, file, bufferSize, length);
+        if (file != null && fs.exists(file)) {
+          return fs.open(file, bufferSize);
+        } else {
+          fs.create(file);
+          return fs.open(file, bufferSize);
+        }
       }
     }
 
