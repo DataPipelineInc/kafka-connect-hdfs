@@ -1,5 +1,6 @@
 package io.confluent.connect.hdfs.csv;
 
+import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
@@ -28,17 +29,26 @@ public class CsvHdfsWriter {
   public static final String DEFAULT_ESCAPE = "\"";
   public static final String DEFAULT_DELIMITER = ",";
 
-  public CsvHdfsWriter(Configuration hadoopConfiguration) throws IOException {
-    this(hadoopConfiguration, DEFAULT_DELIMITER, DEFAULT_ESCAPE);
+  public CsvHdfsWriter(HdfsSinkConnectorConfig connectorConfig)
+      throws IOException, InterruptedException {
+    this(connectorConfig, DEFAULT_DELIMITER, DEFAULT_ESCAPE);
   }
 
-  public CsvHdfsWriter(Configuration hadoopConfiguration, String delimiter) throws IOException {
-    this(hadoopConfiguration, delimiter, DEFAULT_ESCAPE);
+  public CsvHdfsWriter(HdfsSinkConnectorConfig connectorConfig, String delimiter)
+      throws IOException, InterruptedException {
+    this(connectorConfig, delimiter, DEFAULT_ESCAPE);
   }
 
-  public CsvHdfsWriter(Configuration hadoopConfiguration, String delimiter, String escape)
-      throws IOException {
-    this.fs = FileSystem.get(hadoopConfiguration);
+  public CsvHdfsWriter(HdfsSinkConnectorConfig connectorConfig, String delimiter, String escape)
+      throws IOException, InterruptedException {
+    String user = connectorConfig.getString(HdfsSinkConnectorConfig.HADOOP_USER);
+    Configuration hadoopConfiguration = connectorConfig.getHadoopConfiguration();
+    hadoopConfiguration.setBoolean("dfs.support.append", true);
+    hadoopConfiguration.set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER");
+    hadoopConfiguration.set("dfs.client.block.write.replace-datanode-on-failure.enable", "true");
+    this.fs =
+        FileSystem.newInstance(
+            FileSystem.getDefaultUri(hadoopConfiguration), hadoopConfiguration, user);
     this.delimiter = delimiter;
     this.escape = escape;
   }

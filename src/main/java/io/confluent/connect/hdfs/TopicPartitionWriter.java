@@ -14,16 +14,13 @@
 
 package io.confluent.connect.hdfs;
 
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Map.Entry;
 import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaProjector;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.errors.IllegalWorkerStateException;
@@ -405,7 +402,11 @@ public class TopicPartitionWriter {
             }
           case SHOULD_ROTATE:
             updateRotationTimers(currentRecord);
-            closeTempFile();
+            try {
+              closeTempFile();
+            } catch (Exception e) {
+              continue;
+            }
             log.debug("temp file closed");
             nextState();
           case TEMP_FILE_CLOSED:
@@ -695,8 +696,12 @@ public class TopicPartitionWriter {
   private void closeTempFile(String encodedPartition) {
     if (writers.containsKey(encodedPartition)) {
       io.confluent.connect.storage.format.RecordWriter writer = writers.get(encodedPartition);
-      writer.close();
-      writers.remove(encodedPartition);
+      try {
+        writer.close();
+        writers.remove(encodedPartition);
+      } catch (Exception e) {
+        throw new ConnectException("file close failed");
+      }
     }
   }
 
@@ -828,17 +833,22 @@ public class TopicPartitionWriter {
   }
 
   private void addHivePartition(final String location) {
-    Future<Void> future = executorService.submit(new Callable<Void>() {
-      @Override
-      public Void call() throws Exception {
-        try {
-          hiveMetaStore.addPartition(hiveDatabase, FileUtils.getTableFromTopic(tp), location);
-        } catch (Throwable e) {
-          log.error("Adding Hive partition threw unexpected error", e);
-        }
-        return null;
-      }
-    });
+    Future<Void> future =
+        executorService.submit(
+            new Callable<Void>() {
+              @Override
+              public Void call() throws Exception {
+                try {
+                  if (StringUtils.isNotEmpty(location)) {
+                    hiveMetaStore.addPartition(
+                        hiveDatabase, FileUtils.getTableFromTopic(tp), location);
+                  }
+                } catch (Throwable e) {
+                  log.error("Adding Hive partition threw unexpected error", e);
+                }
+                return null;
+              }
+            });
     hiveUpdateFutures.add(future);
   }
 

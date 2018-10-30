@@ -16,7 +16,6 @@ package io.confluent.connect.hdfs.parquet;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.hadoop.fs.Path;
 import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.parquet.avro.AvroParquetWriter;
@@ -82,7 +81,9 @@ public class ParquetRecordWriterProvider
         //        Object value = avroData.fromConnectData(record.valueSchema(), record.value());
         Object value = avroData.fromConnectData(schema, record.value());
         try {
-          writer.write((GenericRecord) value);
+          if (value != null) {
+            writer.write((GenericRecord) value);
+          }
         } catch (IOException e) {
           throw new ConnectException(e);
         }
@@ -94,6 +95,9 @@ public class ParquetRecordWriterProvider
           try {
             writer.close();
           } catch (IOException e) {
+            throw new ConnectException(e);
+          } catch (Exception e) {
+            log.error("parquet file close failed", e);
             throw new ConnectException(e);
           }
         }

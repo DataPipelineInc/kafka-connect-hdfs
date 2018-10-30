@@ -127,10 +127,6 @@ public class DataWriter {
       );
       log.info("Hadoop configuration directory {}", hadoopConfDir);
       Configuration conf = connectorConfig.getHadoopConfiguration();
-      if (!hadoopConfDir.equals("")) {
-        conf.addResource(new Path(hadoopConfDir + "/core-site.xml"));
-        conf.addResource(new Path(hadoopConfDir + "/hdfs-site.xml"));
-      }
 
       boolean secureHadoop = connectorConfig.getBoolean(
           HdfsSinkConnectorConfig.HDFS_AUTHENTICATION_KERBEROS_CONFIG

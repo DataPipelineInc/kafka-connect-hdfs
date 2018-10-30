@@ -14,6 +14,10 @@
 
 package io.confluent.connect.hdfs;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -72,6 +76,16 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
   public static final String HADOOP_HOME_DEFAULT = "";
   private static final String HADOOP_HOME_DOC = "The Hadoop home directory.";
   private static final String HADOOP_HOME_DISPLAY = "Hadoop home directory";
+
+  public static final String HADOOP_USER = "hadoop.user";
+  public static final String HADOOP_USER_DEFAULT = "root";
+  private static final String HADOOP_USER_DOC = "The Hadoop user.";
+  private static final String HADOOP_USER_DISPLAY = "Hadoop user";
+
+  public static final String HADOOP_CONF_FILES = "hadoop.conf.files";
+  public static final String HADOOP_CONF_FILES_DEFAULT = "";
+  private static final String HADOOP_CONF_FILES_DOC = "The Hadoop config files";
+  private static final String HADOOP_CONF_FILES_DISPLAY = "Hadoop config files";
 
   public static final String LOGS_DIR_CONFIG = "logs.dir";
   public static final String LOGS_DIR_DOC =
@@ -273,6 +287,29 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
           KERBEROS_TICKET_RENEW_PERIOD_MS_DISPLAY,
           hdfsAuthenticationKerberosDependentsRecommender
       );
+
+      configDef.define(
+          HADOOP_USER,
+          Type.STRING,
+          HADOOP_USER_DEFAULT,
+          Importance.HIGH,
+          HADOOP_USER_DOC,
+          group,
+          ++orderInGroup,
+          Width.MEDIUM,
+          HADOOP_USER_DISPLAY);
+
+      configDef.define(
+          HADOOP_CONF_FILES,
+          Type.STRING,
+          HADOOP_CONF_FILES_DEFAULT,
+          Importance.HIGH,
+          HADOOP_CONF_FILES_DOC,
+          group,
+          ++orderInGroup,
+          Width.LONG,
+          HADOOP_CONF_FILES_DISPLAY);
+
     }
     // Put the storage group(s) last ...
     ConfigDef storageConfigDef = StorageSinkConnectorConfig.newConfigDef(FORMAT_CLASS_RECOMMENDER);
@@ -291,7 +328,7 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
   private Configuration hadoopConfig;
 
   public HdfsSinkConnectorConfig(Map<String, String> props) {
-    this(newConfigDef() , addDefaults(props));
+    this(newConfigDef(), addDefaults(props));
   }
 
   protected HdfsSinkConnectorConfig(ConfigDef configDef, Map<String, String> props) {
@@ -303,6 +340,14 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
     partitionerConfig = new PartitionerConfig(partitionerConfigDef, originalsStrings());
     this.name = parseName(originalsStrings());
     this.hadoopConfig = new Configuration();
+    List<String> cfgResourceUrls = getHadoopConfFiles();
+    for (String cfgUrl : cfgResourceUrls) {
+      try {
+        hadoopConfig.addResource(new URL(cfgUrl));
+      } catch (MalformedURLException e) {
+        //
+      }
+    }
     addToGlobal(hiveConfig);
     addToGlobal(partitionerConfig);
     addToGlobal(commonConfig);
@@ -425,6 +470,11 @@ public class HdfsSinkConnectorConfig extends StorageSinkConnectorConfig {
         container.define(key);
       }
     }
+  }
+
+  public List<String> getHadoopConfFiles() {
+    return Stream.of(this.originalsStrings().get(HADOOP_CONF_FILES).split(","))
+        .collect(Collectors.toList());
   }
 
   public static void main(String[] args) {

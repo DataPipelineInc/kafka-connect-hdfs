@@ -11,9 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package io.confluent.connect.hdfs.avro;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import io.confluent.connect.avro.AvroData;
@@ -26,17 +26,18 @@ import io.confluent.connect.storage.hive.HiveFactory;
 public class AvroFormat
     implements io.confluent.connect.storage.format.Format<HdfsSinkConnectorConfig, Path> {
   private final AvroData avroData;
+  private final FileSystem fs;
 
   // DO NOT change this signature, it is required for instantiation via reflection
   public AvroFormat(HdfsStorage storage) {
-    this.avroData = new AvroData(
-        storage.conf().getInt(HdfsSinkConnectorConfig.SCHEMA_CACHE_SIZE_CONFIG)
-    );
+    this.avroData =
+        new AvroData(storage.conf().getInt(HdfsSinkConnectorConfig.SCHEMA_CACHE_SIZE_CONFIG));
+    this.fs = storage.getFs();
   }
 
   @Override
   public RecordWriterProvider<HdfsSinkConnectorConfig> getRecordWriterProvider() {
-    return new AvroRecordWriterProvider(avroData);
+    return new AvroRecordWriterProvider(avroData, fs);
   }
 
   @Override

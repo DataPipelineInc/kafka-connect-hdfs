@@ -81,14 +81,14 @@ public class WALFileTest extends TestWithMiniDFSCluster {
     fs.deleteOnExit(file);
   }
 
-  private void verify2Values(Path file) throws IOException {
+  private void verify2Values(Path file) throws IOException, InterruptedException {
     WALEntry key1 = new WALEntry("key1");
     WALEntry val1 = new WALEntry("val1");
 
     WALEntry key2 = new WALEntry("key2");
     WALEntry val2 = new WALEntry("val2");
 
-    WALFile.Reader reader = new WALFile.Reader(conf, WALFile.Reader.file(file));
+    WALFile.Reader reader = new WALFile.Reader(connectorConfig, WALFile.Reader.file(file));
 
     assertEquals(key1.getName(), reader.next((WALEntry) null).getName());
     assertEquals(val1.getName(), reader.getCurrentValue(null).getName());
@@ -98,7 +98,7 @@ public class WALFileTest extends TestWithMiniDFSCluster {
     reader.close();
   }
 
-  private void verifyAll4Values(Path file) throws IOException {
+  private void verifyAll4Values(Path file) throws IOException, InterruptedException {
     WALEntry key1 = new WALEntry("key1");
     WALEntry val1 = new WALEntry("val1");
 
@@ -111,7 +111,7 @@ public class WALFileTest extends TestWithMiniDFSCluster {
     WALEntry key4 = new WALEntry("key4");
     WALEntry val4 = new WALEntry("val4");
 
-    WALFile.Reader reader = new WALFile.Reader(conf, WALFile.Reader.file(file));
+    WALFile.Reader reader = new WALFile.Reader(connectorConfig, WALFile.Reader.file(file));
     assertEquals(key1.getName(), reader.next((WALEntry) null).getName());
     assertEquals(val1.getName(), reader.getCurrentValue(null).getName());
     assertEquals(key2.getName(), reader.next((WALEntry) null).getName());
